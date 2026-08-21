@@ -35,9 +35,10 @@ def run():
     time.sleep(1.5)
     webbrowser.open("http://127.0.0.1:8000")
 
-    # Start Uvicorn
+    # Start Uvicorn with auto-reload enabled
     import uvicorn
-    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("backend.app.main:app", host="127.0.0.1", port=8000, reload=True)
 
 if __name__ == "__main__":
     run()
+

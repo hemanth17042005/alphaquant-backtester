@@ -213,3 +213,59 @@ class OptimizeResult(BaseModel):
     best_y: float
     best_metric_val: float
     grid: List[OptimizeGridPoint]
+
+class PredictionRequest(BaseModel):
+    symbol: str = "BTC-USD"
+    timeframe: str = "1d"
+    period: str = "2y"
+    horizon_days: int = 30
+    model_type: Literal["ensemble", "ridge", "momentum", "fourier", "gbm"] = "ensemble"
+
+class ForecastPoint(BaseModel):
+    step: int
+    date: str
+    predicted_price: float
+    upper_95: float
+    lower_95: float
+    upper_80: float
+    lower_80: float
+    bull_scenario: float
+    bear_scenario: float
+
+class EvaluationMetrics(BaseModel):
+    mae: float
+    rmse: float
+    r2_score: float
+    directional_accuracy_pct: float
+
+class FeatureDriverItem(BaseModel):
+    feature: str
+    label: str
+    importance_pct: float
+
+class ModelComparisonItem(BaseModel):
+    model_name: str
+    target_price: float
+    expected_change_pct: float
+    conviction: str
+    methodology: str
+
+class PredictionResult(BaseModel):
+    symbol: str
+    model_type: str
+    horizon_days: int
+    last_price: float
+    target_price: float
+    predicted_change_pct: float
+    direction: str
+    recommendation: str
+    ai_confidence_pct: float
+    support_level: float
+    resistance_level: float
+    expected_volatility_pct: float
+    evaluation_metrics: EvaluationMetrics
+    feature_drivers: List[FeatureDriverItem]
+    model_comparisons: List[ModelComparisonItem]
+    historical_data: List[Dict[str, Any]]
+    forecast_series: List[ForecastPoint]
+

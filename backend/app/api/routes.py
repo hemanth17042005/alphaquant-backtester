@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Response
+from fastapi import APIRouter, HTTPException, UploadFile, File, Response, Request
 from fastapi.responses import JSONResponse
 import pandas as pd
 import numpy as np
@@ -14,51 +14,79 @@ from backend.app.data.sample_data import SAMPLE_PRESETS
 from backend.app.indicators.indicator_manager import calculate_all_indicators
 from backend.app.engine.models import (
     BacktestRequest, BacktestResult, MonteCarloRequest, MonteCarloResult,
-    OptimizeRequest, OptimizeResult
+    OptimizeRequest, OptimizeResult, PredictionRequest, PredictionResult
 )
 from backend.app.engine.execution import run_backtest_simulation
 from backend.app.engine.monte_carlo import run_monte_carlo_simulation
 from backend.app.engine.optimizer import run_grid_optimization
 from backend.app.engine.strategy import STRATEGY_PRESETS
+from backend.app.engine.ml_predictor import generate_price_prediction
 
 router = APIRouter(prefix="/api")
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "POST"])
 async def health_check():
-    return {"status": "ok", "version": "2.0.0", "engine": "AlphaQuant Execution Core"}
+    return {"status": "ok", "version": "2.5.0", "engine": "AlphaQuant Execution Core"}
 
-@router.get("/symbols")
+@router.api_route("/symbols", methods=["GET", "POST"])
 async def get_popular_symbols():
     return {
         "popular": POPULAR_SYMBOLS,
         "sample_presets": SAMPLE_PRESETS
     }
 
-@router.get("/symbols/search")
-async def search_market_symbols(q: str = ""):
-    """Search any stock, crypto, ETF, forex, or index across global markets."""
-    results = search_symbols(q)
-    return {"query": q, "results": results}
+@router.api_route("/symbols/search", methods=["GET", "POST"])
+async def search_market_symbols(request: Request, q: str = ""):
+    """Search any stock, crypto, ETF, forex, or index across global markets. Supports both GET and POST."""
+    search_q = q
+    if not search_q and request.method == "POST":
+        try:
+            body = await request.json()
+            search_q = body.get("q", "") or body.get("query", "")
+        except Exception:
+            pass
+    results = search_symbols(search_q)
+    return {"query": search_q, "results": results}
 
-@router.get("/strategies/presets")
+@router.api_route("/strategies/presets", methods=["GET", "POST"])
 async def get_strategy_presets():
     return {"presets": STRATEGY_PRESETS}
 
-@router.post("/data/history")
+@router.api_route("/data/history", methods=["GET", "POST"])
 async def get_market_history(
+    request: Request,
     symbol: str = "BTC-USD",
     timeframe: str = "1d",
     period: str = "2y",
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ):
+    """Fetch historical OHLCV data + indicators. Supports both GET and POST."""
+    sym = symbol
+    tf = timeframe
+    per = period
+    s_date = start_date
+    e_date = end_date
+
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                sym = body.get("symbol", sym)
+                tf = body.get("timeframe", tf)
+                per = body.get("period", per)
+                s_date = body.get("start_date", s_date)
+                e_date = body.get("end_date", e_date)
+        except Exception:
+            pass
+
     try:
         df = fetch_market_data(
-            symbol=symbol,
-            timeframe=timeframe,
-            period=period,
-            start_date=start_date,
-            end_date=end_date
+            symbol=sym,
+            timeframe=tf,
+            period=per,
+            start_date=s_date,
+            end_date=e_date
         )
         
         # Calculate full suite of indicators
@@ -76,8 +104,8 @@ async def get_market_history(
                     row[k] = None
                     
         return {
-            "symbol": symbol,
-            "timeframe": timeframe,
+            "symbol": sym,
+            "timeframe": tf,
             "bars_count": len(records),
             "candles": records,
             "order_blocks": indicator_data["order_blocks"][:30],
@@ -117,6 +145,55 @@ async def execute_optimization(request: OptimizeRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Parameter optimization failed: {str(e)}")
+
+@router.api_route("/predict/run", methods=["GET", "POST"], response_model=PredictionResult)
+async def execute_price_prediction(
+    request: Request,
+    symbol: str = "BTC-USD",
+    timeframe: str = "1d",
+    period: str = "2y",
+    horizon_days: int = 30,
+    model_type: str = "ensemble"
+):
+    """
+    Execute Quantitative Machine Learning Price Prediction across any stock, crypto,
+    ETF, or index globally with multi-scale feature learning, confidence bounds,
+    out-of-sample directional accuracy, and driver attribution. Supports GET and POST.
+    """
+    sym = symbol
+    tf = timeframe
+    per = period
+    horizon = horizon_days
+    m_type = model_type
+
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                sym = body.get("symbol", sym)
+                tf = body.get("timeframe", tf)
+                per = body.get("period", per)
+                horizon = int(body.get("horizon_days", horizon))
+                m_type = body.get("model_type", m_type)
+        except Exception:
+            pass
+
+    try:
+        df = fetch_market_data(
+            symbol=sym,
+            timeframe=tf,
+            period=per
+        )
+        
+        result = generate_price_prediction(
+            df=df,
+            symbol=sym,
+            horizon_days=horizon,
+            model_type=m_type
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Price prediction failed: {str(e)}")
 
 @router.post("/data/upload")
 async def upload_custom_data(file: UploadFile = File(...)):

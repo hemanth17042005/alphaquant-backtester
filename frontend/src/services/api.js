@@ -7,9 +7,23 @@ export async function fetchSymbols() {
 }
 
 export async function searchSymbols(query) {
-  const res = await fetch(`${API_BASE}/symbols/search?q=${encodeURIComponent(query || '')}`);
-  if (!res.ok) throw new Error('Failed to search symbols');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/symbols/search?q=${encodeURIComponent(query || '')}`);
+    if (!res.ok) {
+      // Fallback to POST if GET fails
+      const postRes = await fetch(`${API_BASE}/symbols/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: query || '' })
+      });
+      if (postRes.ok) return postRes.json();
+      throw new Error(`Search error (HTTP ${res.status})`);
+    }
+    return res.json();
+  } catch (err) {
+    console.error('searchSymbols error:', err);
+    return { query: query || '', results: [] };
+  }
 }
 
 export async function fetchPresets() {
@@ -19,9 +33,15 @@ export async function fetchPresets() {
 }
 
 export async function fetchMarketHistory(symbol, timeframe = '1d', period = '2y') {
-  const res = await fetch(`${API_BASE}/data/history?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&period=${period}`, {
-    method: 'POST'
+  let res = await fetch(`${API_BASE}/data/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symbol, timeframe, period })
   });
+  if (!res.ok) {
+    // Fallback to query parameter GET request
+    res = await fetch(`${API_BASE}/data/history?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&period=${period}`);
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Failed to fetch history' }));
     throw new Error(err.detail || 'Failed to fetch history');
@@ -38,6 +58,19 @@ export async function runBacktest(backtestRequest) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Backtest failed' }));
     throw new Error(err.detail || 'Backtest failed');
+  }
+  return res.json();
+}
+
+export async function runPricePrediction(predictionRequest) {
+  const res = await fetch(`${API_BASE}/predict/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(predictionRequest)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Price prediction failed' }));
+    throw new Error(err.detail || 'Price prediction failed');
   }
   return res.json();
 }
