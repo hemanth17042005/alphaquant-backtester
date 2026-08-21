@@ -1,0 +1,9 @@
+.venv
+venv
+__pycache__
+*.pyc
+*.parquet
+*.csv.gz
+frontend/node_modules
+.git
+.pytest_cache
