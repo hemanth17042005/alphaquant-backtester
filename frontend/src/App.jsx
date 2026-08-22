@@ -295,140 +295,144 @@ export default function App() {
               />
             </div>
 
-            {/* Right Column: Multi-Tab Institutional Analytics */}
-            <div className="glass-panel" style={{ padding: '1.25rem', minHeight: '680px' }}>
+            {/* Right Column: Multi-Tab Institutional Analytics & Summary Explainer */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0 }}>
               
-              {/* Workspace Navigation Tabs */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: '0.85rem',
-                marginBottom: '1.25rem',
-                overflowX: 'auto'
-              }}>
-                <button
-                  id="tab-chart"
-                  className={`nav-tab ${activeTab === 'chart' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('chart')}
-                >
-                  <TrendingUp size={15} />
-                  <span>SMC Candlestick Chart</span>
-                </button>
+              <div className="glass-panel" style={{ padding: '1.25rem' }}>
+                
+                {/* Workspace Navigation Tabs */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  paddingBottom: '0.85rem',
+                  marginBottom: '1.25rem',
+                  overflowX: 'auto'
+                }}>
+                  <button
+                    id="tab-chart"
+                    className={`nav-tab ${activeTab === 'chart' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('chart')}
+                  >
+                    <TrendingUp size={15} />
+                    <span>SMC Candlestick Chart</span>
+                  </button>
 
-                <button
-                  id="tab-analytics"
-                  className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('analytics')}
-                >
-                  <BarChart2 size={15} />
-                  <span>Portfolio & Returns</span>
-                </button>
+                  <button
+                    id="tab-analytics"
+                    className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('analytics')}
+                  >
+                    <BarChart2 size={15} />
+                    <span>Portfolio & Returns</span>
+                  </button>
 
-                <button
-                  id="tab-monte-carlo"
-                  className={`nav-tab ${activeTab === 'monte_carlo' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('monte_carlo')}
-                >
-                  <Flame size={15} />
-                  <span>Monte Carlo Stress Test</span>
-                </button>
+                  <button
+                    id="tab-monte-carlo"
+                    className={`nav-tab ${activeTab === 'monte_carlo' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('monte_carlo')}
+                  >
+                    <Flame size={15} />
+                    <span>Monte Carlo Stress Test</span>
+                  </button>
 
-                <button
-                  id="tab-optimization"
-                  className={`nav-tab ${activeTab === 'optimization' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('optimization')}
-                >
-                  <Sliders size={15} />
-                  <span>2D Parameter Grid</span>
-                </button>
+                  <button
+                    id="tab-optimization"
+                    className={`nav-tab ${activeTab === 'optimization' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('optimization')}
+                  >
+                    <Sliders size={15} />
+                    <span>2D Parameter Grid</span>
+                  </button>
 
-                <button
-                  id="tab-trades"
-                  className={`nav-tab ${activeTab === 'trades' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('trades')}
-                >
-                  <FileText size={15} />
-                  <span>Trade Execution Log ({backtestResult?.trades?.length || 0})</span>
-                </button>
-              </div>
+                  <button
+                    id="tab-trades"
+                    className={`nav-tab ${activeTab === 'trades' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('trades')}
+                  >
+                    <FileText size={15} />
+                    <span>Trade Execution Log ({backtestResult?.trades?.length || 0})</span>
+                  </button>
+                </div>
 
-              {/* Tab 1: Interactive Candlestick Chart with SMC Zones */}
-              {activeTab === 'chart' && (
-                <CandlestickChart
-                  symbol={symbol}
-                  timeframe={timeframe}
-                  candles={marketData?.candles || []}
-                  marketData={marketData}
-                  orderBlocks={marketData?.order_blocks || []}
-                  fairValueGaps={marketData?.fair_value_gaps || []}
-                  trades={backtestResult?.trades || []}
-                />
-              )}
+                {/* Tab 1: Interactive Candlestick Chart with SMC Zones */}
+                {activeTab === 'chart' && (
+                  <CandlestickChart
+                    symbol={symbol}
+                    timeframe={timeframe}
+                    candles={marketData?.candles || []}
+                    marketData={marketData}
+                    orderBlocks={marketData?.order_blocks || []}
+                    fairValueGaps={marketData?.fair_value_gaps || []}
+                    trades={backtestResult?.trades || []}
+                  />
+                )}
 
-              {/* Tab 2: Portfolio Equity vs Buy & Hold + Underwater Drawdown + Monthly Heatmap */}
-              {activeTab === 'analytics' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <EquityDrawdownChart
-                    equityCurve={backtestResult?.equity_curve || []}
+                {/* Tab 2: Portfolio Equity vs Buy & Hold + Underwater Drawdown + Monthly Heatmap */}
+                {activeTab === 'analytics' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <EquityDrawdownChart
+                      equityCurve={backtestResult?.equity_curve || []}
+                      symbol={symbol}
+                      currencyPreference={currencyPreference}
+                    />
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1.2fr)',
+                      gap: '1.25rem'
+                    }}>
+                      <RiskRewardDistribution trades={backtestResult?.trades || []} />
+                      <MonthlyReturnsHeatmap monthlyReturns={backtestResult?.metrics?.monthly_returns || {}} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 3: 500-Run Monte Carlo Simulation */}
+                {activeTab === 'monte_carlo' && (
+                  <MonteCarloView
+                    trades={backtestResult?.trades || []}
+                    initialCapital={riskConfig.initial_capital}
                     symbol={symbol}
                     currencyPreference={currencyPreference}
                   />
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1.2fr)',
-                    gap: '1.25rem'
-                  }}>
-                    <RiskRewardDistribution trades={backtestResult?.trades || []} />
-                    <MonthlyReturnsHeatmap monthlyReturns={backtestResult?.metrics?.monthly_returns || {}} />
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Tab 3: 500-Run Monte Carlo Simulation */}
-              {activeTab === 'monte_carlo' && (
-                <MonteCarloView
-                  trades={backtestResult?.trades || []}
-                  initialCapital={riskConfig.initial_capital}
-                  symbol={symbol}
-                  currencyPreference={currencyPreference}
-                />
-              )}
+                {/* Tab 4: 2D Parameter Grid Optimization Sensitivity */}
+                {activeTab === 'optimization' && (
+                  <OptimizationHeatmap
+                    symbol={symbol}
+                    timeframe={timeframe}
+                    period={period}
+                    strategyConfig={strategyConfig}
+                    indicatorConfig={indicatorConfig}
+                    riskConfig={riskConfig}
+                  />
+                )}
 
-              {/* Tab 4: 2D Parameter Grid Optimization Sensitivity */}
-              {activeTab === 'optimization' && (
-                <OptimizationHeatmap
-                  symbol={symbol}
-                  timeframe={timeframe}
-                  period={period}
-                  strategyConfig={strategyConfig}
-                  indicatorConfig={indicatorConfig}
-                  riskConfig={riskConfig}
-                />
-              )}
+                {/* Tab 5: Trade Execution Ledger */}
+                {activeTab === 'trades' && (
+                  <TradeLogTable
+                    trades={backtestResult?.trades || []}
+                    symbol={symbol}
+                    currencyPreference={currencyPreference}
+                  />
+                )}
 
-              {/* Tab 5: Trade Execution Ledger */}
-              {activeTab === 'trades' && (
-                <TradeLogTable
-                  trades={backtestResult?.trades || []}
-                  symbol={symbol}
-                  currencyPreference={currencyPreference}
-                />
-              )}
+              </div>
+
+              {/* Comprehensive Summary & Quantitative Explainer placed directly beside the sidebar! */}
+              <PageSummaryExplainer
+                mode="backtester"
+                symbol={symbol}
+                currencyPreference={currencyPreference}
+                backtestResult={backtestResult}
+                strategyConfig={strategyConfig}
+              />
 
             </div>
 
           </div>
-
-          {/* Comprehensive Bottom Executive Summary & Explainer */}
-          <PageSummaryExplainer
-            mode="backtester"
-            symbol={symbol}
-            currencyPreference={currencyPreference}
-            backtestResult={backtestResult}
-            strategyConfig={strategyConfig}
-          />
 
         </div>
       )}

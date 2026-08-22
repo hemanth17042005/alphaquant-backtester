@@ -230,8 +230,8 @@ export default function PageSummaryExplainer({
     <div
       className="glass-panel"
       style={{
-        padding: '1.5rem',
-        marginTop: '1.5rem',
+        padding: '1.25rem 1.5rem',
+        marginTop: '0',
         borderTop: '2px solid #9B5DE5',
         background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(8, 11, 17, 0.95) 100%)',
         position: 'relative',
