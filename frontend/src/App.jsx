@@ -17,6 +17,7 @@ import RiskRewardDistribution from './components/RiskRewardDistribution';
 import MonteCarloView from './components/MonteCarloView';
 import OptimizationHeatmap from './components/OptimizationHeatmap';
 import TradeLogTable from './components/TradeLogTable';
+import PageSummaryExplainer from './components/PageSummaryExplainer';
 
 import { fetchSymbols, fetchPresets, fetchMarketHistory, runBacktest } from './services/api';
 import { getCurrencySymbol } from './services/currency';
@@ -419,6 +420,15 @@ export default function App() {
             </div>
 
           </div>
+
+          {/* Comprehensive Bottom Executive Summary & Explainer */}
+          <PageSummaryExplainer
+            mode="backtester"
+            symbol={symbol}
+            currencyPreference={currencyPreference}
+            backtestResult={backtestResult}
+            strategyConfig={strategyConfig}
+          />
 
         </div>
       )}

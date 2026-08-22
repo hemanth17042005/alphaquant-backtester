@@ -8,6 +8,7 @@ import {
 
 import SymbolSearchSelector from './SymbolSearchSelector';
 import PlotWrapper from './PlotWrapper';
+import PageSummaryExplainer from './PageSummaryExplainer';
 import { runPricePrediction } from '../services/api';
 import { getCurrencySymbol, formatPrice } from '../services/currency';
 
@@ -788,6 +789,14 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
         </div>
 
       </div>
+
+      {/* Comprehensive Bottom Executive Summary & Technical Guide */}
+      <PageSummaryExplainer
+        mode="predictor"
+        symbol={symbol}
+        currencyPreference={currencyMode}
+        predictionData={predictionData}
+      />
 
     </div>
   );
