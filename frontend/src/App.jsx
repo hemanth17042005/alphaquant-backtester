@@ -366,6 +366,7 @@ export default function App() {
                     orderBlocks={marketData?.order_blocks || []}
                     fairValueGaps={marketData?.fair_value_gaps || []}
                     trades={backtestResult?.trades || []}
+                    currencyPreference={currencyPreference}
                   />
                 )}
 

@@ -9,6 +9,7 @@ import {
 import SymbolSearchSelector from './SymbolSearchSelector';
 import PlotWrapper from './PlotWrapper';
 import PageSummaryExplainer from './PageSummaryExplainer';
+import LivePriceTickerCard from './LivePriceTickerCard';
 import { runPricePrediction } from '../services/api';
 import { getCurrencySymbol, formatPrice } from '../services/currency';
 
@@ -480,6 +481,13 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
           <span>{error}</span>
         </div>
       )}
+
+      {/* Real-time Live Market Price Strip Card */}
+      <LivePriceTickerCard
+        symbol={symbol}
+        currencyPreference={currencyMode}
+        showHighLow={true}
+      />
 
       {/* 6 Key Machine Learning KPI Cards Grid with Dynamic Rupee / Dollar Formatting */}
       <div style={{

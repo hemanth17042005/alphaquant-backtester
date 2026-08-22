@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, TrendingUp, ShieldCheck, Activity, Database, RefreshCw, Search, Home, BrainCircuit, Coins, IndianRupee, DollarSign } from 'lucide-react';
 import SymbolSearchSelector from './SymbolSearchSelector';
+import LivePriceTickerCard from './LivePriceTickerCard';
 import { getCurrencySymbol } from '../services/currency';
 
 export default function Header({
@@ -147,7 +148,7 @@ export default function Header({
             </button>
           )}
 
-          {/* Universal Symbol Search & Selector (Always active) */}
+          {/* Universal Symbol Search & Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative', zIndex: 1002, overflow: 'visible' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600 }}>ASSET:</span>
             <SymbolSearchSelector
@@ -155,6 +156,13 @@ export default function Header({
               setSymbol={setSymbol}
             />
           </div>
+
+          {/* Real-time Live Price Badge */}
+          <LivePriceTickerCard
+            symbol={symbol}
+            currencyPreference={currencyPreference}
+            compact={true}
+          />
 
           {/* Currency Preference Selector */}
           {setCurrencyPreference && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PlotWrapper from './PlotWrapper';
 import { Eye, EyeOff, Maximize2, Minimize2, Layers } from 'lucide-react';
+import LivePriceTickerCard from './LivePriceTickerCard';
 
 export default function CandlestickChart({
   candles = [],
@@ -9,7 +10,8 @@ export default function CandlestickChart({
   orderBlocks = [],
   fairValueGaps = [],
   symbol = 'BTC-USD',
-  timeframe = '1d'
+  timeframe = '1d',
+  currencyPreference = 'auto'
 }) {
   const [showEMA, setShowEMA] = useState(true);
   const [showVWAP, setShowVWAP] = useState(true);
@@ -291,13 +293,18 @@ export default function CandlestickChart({
       {/* Chart Control Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: '1rem', color: '#F8FAFC' }}>
             {symbol}
           </span>
           <span className="badge-neutral" style={{ fontSize: '0.7rem' }}>
             {timeframe.toUpperCase()}
           </span>
+          <LivePriceTickerCard
+            symbol={symbol}
+            currencyPreference={currencyPreference}
+            compact={true}
+          />
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             ({actualCandles.length} Bars)
           </span>
