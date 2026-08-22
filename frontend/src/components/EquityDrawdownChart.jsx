@@ -1,12 +1,14 @@
 import React from 'react';
 import PlotWrapper from './PlotWrapper';
 import { TrendingUp, ShieldAlert } from 'lucide-react';
+import { getCurrencySymbol } from '../services/currency';
 
-export default function EquityDrawdownChart({ equityCurve = [] }) {
+export default function EquityDrawdownChart({ equityCurve = [], symbol = 'BTC-USD', currencyPreference = 'auto' }) {
   if (!equityCurve || equityCurve.length === 0) {
     return null;
   }
 
+  const currSym = getCurrencySymbol(symbol, currencyPreference);
   const timestamps = equityCurve.map((pt) => pt.timestamp);
   const equities = equityCurve.map((pt) => pt.equity);
   const benchmarks = equityCurve.map((pt) => pt.benchmark_equity);
@@ -53,7 +55,7 @@ export default function EquityDrawdownChart({ equityCurve = [] }) {
   const layout = {
     autosize: true,
     height: 440,
-    margin: { l: 55, r: 25, t: 20, b: 35 },
+    margin: { l: 65, r: 25, t: 20, b: 35 },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     grid: { rows: 2, columns: 1, pattern: 'independent', roworder: 'top to bottom' },
@@ -64,7 +66,7 @@ export default function EquityDrawdownChart({ equityCurve = [] }) {
       anchor: 'y'
     },
     yaxis: {
-      title: 'Portfolio Value ($)',
+      title: `Portfolio Value (${currSym})`,
       titlefont: { color: '#94A3B8', size: 10 },
       gridcolor: 'rgba(255, 255, 255, 0.05)',
       tickfont: { color: '#94A3B8', family: 'JetBrains Mono', size: 10 },

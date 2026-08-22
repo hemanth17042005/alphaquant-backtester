@@ -1,6 +1,7 @@
 import React from 'react';
-import { Play, TrendingUp, ShieldCheck, Activity, Database, RefreshCw, Search, Home, BrainCircuit } from 'lucide-react';
+import { Play, TrendingUp, ShieldCheck, Activity, Database, RefreshCw, Search, Home, BrainCircuit, Coins, IndianRupee, DollarSign } from 'lucide-react';
 import SymbolSearchSelector from './SymbolSearchSelector';
+import { getCurrencySymbol } from '../services/currency';
 
 export default function Header({
   symbol,
@@ -14,8 +15,12 @@ export default function Header({
   popularSymbols = [],
   onOpenWelcome,
   activeMode = 'backtester',
-  setActiveMode
+  setActiveMode,
+  currencyPreference = 'auto',
+  setCurrencyPreference
 }) {
+  const activeCurrencySymbol = getCurrencySymbol(symbol, currencyPreference);
+
   return (
     <header
       className="glass-panel"
@@ -150,6 +155,24 @@ export default function Header({
               setSymbol={setSymbol}
             />
           </div>
+
+          {/* Currency Preference Selector */}
+          {setCurrencyPreference && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600 }}>CURR:</span>
+              <select
+                className="input-dark"
+                value={currencyPreference}
+                onChange={(e) => setCurrencyPreference(e.target.value)}
+                style={{ width: '90px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: activeCurrencySymbol === '₹' ? '#00BBF9' : '#00F5D4' }}
+                title="Select Currency Display"
+              >
+                <option value="auto">Auto ({getCurrencySymbol(symbol, 'auto')})</option>
+                <option value="INR">₹ INR</option>
+                <option value="USD">$ USD</option>
+              </select>
+            </div>
+          )}
 
           {/* Timeframe Selector (Backtester Mode) */}
           {activeMode === 'backtester' && (

@@ -19,6 +19,7 @@ import OptimizationHeatmap from './components/OptimizationHeatmap';
 import TradeLogTable from './components/TradeLogTable';
 
 import { fetchSymbols, fetchPresets, fetchMarketHistory, runBacktest } from './services/api';
+import { getCurrencySymbol } from './services/currency';
 
 export default function App() {
   // Top-Level View Mode: Welcome Landing Screen vs Active Terminal
@@ -26,6 +27,9 @@ export default function App() {
 
   // Active Application Mode: 'predictor' (AI Price Forecaster) vs 'backtester' (Algorithmic Backtester)
   const [activeMode, setActiveMode] = useState('predictor');
+
+  // Currency Display Mode: 'auto' (Smart detect based on ticker), 'INR' (₹), 'USD' ($)
+  const [currencyPreference, setCurrencyPreference] = useState('auto');
 
   // Terminal Navigation State (for Backtester mode)
   const [activeTab, setActiveTab] = useState('chart'); // 'chart', 'analytics', 'monte_carlo', 'optimization', 'trades'
@@ -205,7 +209,7 @@ export default function App() {
   return (
     <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '1.25rem' }}>
       
-      {/* Universal Header Bar with Mode Switcher */}
+      {/* Universal Header Bar with Mode Switcher & Currency Toggle */}
       <Header
         symbol={symbol}
         setSymbol={handleSymbolChange}
@@ -219,13 +223,17 @@ export default function App() {
         onOpenWelcome={() => setShowWelcome(true)}
         activeMode={activeMode}
         setActiveMode={setActiveMode}
+        currencyPreference={currencyPreference}
+        setCurrencyPreference={setCurrencyPreference}
       />
 
       {/* Mode 1: AI Price Predictor Workspace */}
       {activeMode === 'predictor' && (
         <PricePredictorView
           initialSymbol={symbol}
-          key={`predictor-${symbol}`}
+          currencyPreference={currencyPreference}
+          onCurrencyChange={setCurrencyPreference}
+          key={`predictor-${symbol}-${currencyPreference}`}
         />
       )}
 
@@ -252,7 +260,11 @@ export default function App() {
           )}
 
           {/* 8 Metric KPI Cards Grid */}
-          <MetricsGrid metrics={backtestResult?.metrics} />
+          <MetricsGrid
+            metrics={backtestResult?.metrics}
+            symbol={symbol}
+            currencyPreference={currencyPreference}
+          />
 
           {/* Strategy Control Sidebar & Interactive Visualization Workspace */}
           <div style={{
@@ -276,6 +288,8 @@ export default function App() {
               <RiskManagementPanel
                 riskConfig={riskConfig}
                 setRiskConfig={setRiskConfig}
+                symbol={symbol}
+                currencyPreference={currencyPreference}
                 onRunBacktest={(updatedRisk) => executeBacktest(symbol, strategyConfig.preset_id, timeframe, period, strategyConfig, updatedRisk, indicatorConfig)}
               />
             </div>
@@ -357,7 +371,8 @@ export default function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <EquityDrawdownChart
                     equityCurve={backtestResult?.equity_curve || []}
-                    initialCapital={riskConfig.initial_capital}
+                    symbol={symbol}
+                    currencyPreference={currencyPreference}
                   />
                   <div style={{
                     display: 'grid',
@@ -375,6 +390,8 @@ export default function App() {
                 <MonteCarloView
                   trades={backtestResult?.trades || []}
                   initialCapital={riskConfig.initial_capital}
+                  symbol={symbol}
+                  currencyPreference={currencyPreference}
                 />
               )}
 
@@ -392,7 +409,11 @@ export default function App() {
 
               {/* Tab 5: Trade Execution Ledger */}
               {activeTab === 'trades' && (
-                <TradeLogTable trades={backtestResult?.trades || []} />
+                <TradeLogTable
+                  trades={backtestResult?.trades || []}
+                  symbol={symbol}
+                  currencyPreference={currencyPreference}
+                />
               )}
 
             </div>

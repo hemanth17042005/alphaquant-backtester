@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Download, Search, Filter, ArrowUpDown } from 'lucide-react';
 import { exportTradesCsv } from '../services/api';
+import { getCurrencySymbol, formatPrice } from '../services/currency';
 
-export default function TradeLogTable({ trades = [] }) {
+export default function TradeLogTable({ trades = [], symbol = 'BTC-USD', currencyPreference = 'auto' }) {
   const [filterType, setFilterType] = useState('all'); // all, wins, losses, long, short
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('trade_id');
   const [sortAsc, setSortAsc] = useState(true);
+
+  const currSym = getCurrencySymbol(symbol, currencyPreference);
 
   if (!trades || trades.length === 0) {
     return (
@@ -54,73 +57,61 @@ export default function TradeLogTable({ trades = [] }) {
     }
   };
 
-  const handleExport = () => {
-    exportTradesCsv(trades);
-  };
-
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       
-      {/* Header & Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      {/* Top Filter & Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-            SIMULATED TRADE EXECUTION LEDGER
-          </h2>
-          <span className="badge-neutral">{filtered.length} of {trades.length} Trades</span>
+        {/* Filter Buttons */}
+        <div style={{ display: 'flex', gap: '0.35rem' }}>
+          {[
+            { id: 'all', label: 'All Trades' },
+            { id: 'wins', label: 'Winners' },
+            { id: 'losses', label: 'Losers' },
+            { id: 'long', label: 'Long Only' },
+            { id: 'short', label: 'Short Only' }
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilterType(f.id)}
+              className={`btn-secondary ${filterType === f.id ? 'active' : ''}`}
+              style={{
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.75rem',
+                borderColor: filterType === f.id ? 'var(--accent-primary)' : undefined,
+                color: filterType === f.id ? 'var(--accent-primary)' : undefined
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          
-          {/* Search Input */}
-          <div style={{ position: 'relative', width: '180px' }}>
-            <Search size={14} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+        {/* Search & Export CSV */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
             <input
               type="text"
-              className="input-dark"
-              placeholder="Search trades..."
+              placeholder="Search trade log..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ paddingLeft: '28px', fontSize: '0.8rem' }}
+              className="input-dark"
+              style={{ paddingLeft: '28px', fontSize: '0.78rem', width: '160px', height: '32px' }}
             />
           </div>
 
-          {/* Filter Pills */}
-          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '2px' }}>
-            {['all', 'wins', 'losses', 'long', 'short'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilterType(f)}
-                style={{
-                  padding: '0.3rem 0.6rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  background: filterType === f ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: filterType === f ? 'var(--text-main)' : 'var(--text-dim)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase'
-                }}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-
-          {/* CSV Export Button */}
           <button
+            onClick={() => exportTradesCsv(trades)}
             className="btn-secondary"
-            onClick={handleExport}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', height: '32px' }}
+            title="Download CSV report"
           >
             <Download size={14} />
             <span>Export CSV</span>
           </button>
-
         </div>
-
       </div>
 
       {/* Table */}
@@ -131,11 +122,11 @@ export default function TradeLogTable({ trades = [] }) {
               <th onClick={() => handleSort('trade_id')} style={{ cursor: 'pointer' }}>#</th>
               <th onClick={() => handleSort('side')} style={{ cursor: 'pointer' }}>Side</th>
               <th onClick={() => handleSort('entry_time')} style={{ cursor: 'pointer' }}>Entry Time</th>
-              <th onClick={() => handleSort('entry_price')} style={{ cursor: 'pointer' }}>Entry ($)</th>
+              <th onClick={() => handleSort('entry_price')} style={{ cursor: 'pointer' }}>Entry ({currSym})</th>
               <th onClick={() => handleSort('exit_time')} style={{ cursor: 'pointer' }}>Exit Time</th>
-              <th onClick={() => handleSort('exit_price')} style={{ cursor: 'pointer' }}>Exit ($)</th>
+              <th onClick={() => handleSort('exit_price')} style={{ cursor: 'pointer' }}>Exit ({currSym})</th>
               <th onClick={() => handleSort('shares')} style={{ cursor: 'pointer' }}>Size</th>
-              <th onClick={() => handleSort('pnl_dollar')} style={{ cursor: 'pointer' }}>Net PnL ($)</th>
+              <th onClick={() => handleSort('pnl_dollar')} style={{ cursor: 'pointer' }}>Net PnL ({currSym})</th>
               <th onClick={() => handleSort('pnl_pct')} style={{ cursor: 'pointer' }}>ROI (%)</th>
               <th onClick={() => handleSort('realized_rr')} style={{ cursor: 'pointer' }}>Realized R</th>
               <th onClick={() => handleSort('exit_reason')} style={{ cursor: 'pointer' }}>Exit Reason</th>
@@ -154,12 +145,12 @@ export default function TradeLogTable({ trades = [] }) {
                     </span>
                   </td>
                   <td>{t.entry_time}</td>
-                  <td>${t.entry_price.toLocaleString()}</td>
+                  <td>{formatPrice(t.entry_price, symbol, currencyPreference, 2)}</td>
                   <td>{t.exit_time}</td>
-                  <td>${t.exit_price.toLocaleString()}</td>
+                  <td>{formatPrice(t.exit_price, symbol, currencyPreference, 2)}</td>
                   <td>{t.shares}</td>
                   <td style={{ color: isWin ? '#10B981' : '#EF4444', fontWeight: 700 }}>
-                    {isWin ? '+' : ''}${t.pnl_dollar.toLocaleString()}
+                    {isWin ? '+' : ''}{formatPrice(t.pnl_dollar, symbol, currencyPreference, 2)}
                   </td>
                   <td style={{ color: isWin ? '#10B981' : '#EF4444', fontWeight: 700 }}>
                     {isWin ? '+' : ''}{t.pnl_pct}%

@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import PlotWrapper from './PlotWrapper';
 import { Shuffle, RefreshCw, AlertTriangle, CheckCircle, Flame } from 'lucide-react';
 import { runMonteCarlo } from '../services/api';
+import { getCurrencySymbol, formatPrice } from '../services/currency';
 
-export default function MonteCarloView({ trades = [], initialCapital = 100000 }) {
+export default function MonteCarloView({ trades = [], initialCapital = 100000, symbol = 'BTC-USD', currencyPreference = 'auto' }) {
   const [numSims, setNumSims] = useState(500);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const currSym = getCurrencySymbol(symbol, currencyPreference);
 
   const handleRunSimulation = async () => {
     if (!trades || trades.length < 3) {
@@ -48,7 +51,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
         x: xSteps,
         y: pPaths['p95'],
         name: '95th Percentile (Best)',
-        line: { color: '#00F5D4', width: 1.5, dash: 'dot' }
+        line: { color: '#10B981', width: 1.5, dash: 'dot' }
       },
       // 75th Percentile
       {
@@ -57,7 +60,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
         x: xSteps,
         y: pPaths['p75'],
         name: '75th Percentile',
-        line: { color: '#00BBF9', width: 1.2 }
+        line: { color: 'rgba(0, 245, 212, 0.5)', width: 1 }
       },
       // 50th Percentile (Median)
       {
@@ -66,7 +69,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
         x: xSteps,
         y: pPaths['p50'],
         name: '50th Percentile (Median)',
-        line: { color: '#FFFFFF', width: 2.5 }
+        line: { color: '#00F5D4', width: 2.5 }
       },
       // 25th Percentile
       {
@@ -75,7 +78,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
         x: xSteps,
         y: pPaths['p25'],
         name: '25th Percentile',
-        line: { color: '#F15BB5', width: 1.2 }
+        line: { color: 'rgba(239, 68, 68, 0.5)', width: 1 }
       },
       // 5th Percentile (Worst Case)
       {
@@ -84,9 +87,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
         x: xSteps,
         y: pPaths['p5'],
         name: '5th Percentile (Worst)',
-        line: { color: '#EF4444', width: 1.5, dash: 'dot' },
-        fill: 'tonexty',
-        fillcolor: 'rgba(239, 68, 68, 0.05)'
+        line: { color: '#EF4444', width: 1.5, dash: 'dot' }
       }
     ];
   }
@@ -94,7 +95,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
   const layout = {
     autosize: true,
     height: 380,
-    margin: { l: 55, r: 25, t: 20, b: 35 },
+    margin: { l: 65, r: 25, t: 20, b: 35 },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     xaxis: {
@@ -102,7 +103,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
       tickfont: { color: '#94A3B8', family: 'JetBrains Mono', size: 9 }
     },
     yaxis: {
-      title: 'Simulated Equity ($)',
+      title: `Simulated Equity (${currSym})`,
       titlefont: { color: '#94A3B8', size: 10 },
       gridcolor: 'rgba(255, 255, 255, 0.05)',
       tickfont: { color: '#94A3B8', family: 'JetBrains Mono', size: 10 }
@@ -123,7 +124,7 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Flame size={18} color="#F15BB5" />
           <h2 style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-            MONTE CARLO RESHUFFLING & RUIN STRESS TEST
+            MONTE CARLO RESHUFFLING & RUIN STRESS TEST ({currSym})
           </h2>
         </div>
 
@@ -164,9 +165,9 @@ export default function MonteCarloView({ trades = [], initialCapital = 100000 })
           <div className="kpi-card glass-panel">
             <span className="kpi-label">Median Final Equity</span>
             <div className="kpi-value" style={{ color: '#FFFFFF', fontSize: '1.25rem' }}>
-              ${result.median_final_equity?.toLocaleString()}
+              {formatPrice(result.median_final_equity, symbol, currencyPreference, 0)}
             </div>
-            <div className="kpi-sub">5th%: ${result.p5_final_equity?.toLocaleString()} | 95th%: ${result.p95_final_equity?.toLocaleString()}</div>
+            <div className="kpi-sub">5th%: {formatPrice(result.p5_final_equity, symbol, currencyPreference, 0)} | 95th%: {formatPrice(result.p95_final_equity, symbol, currencyPreference, 0)}</div>
           </div>
 
           <div className="kpi-card glass-panel">

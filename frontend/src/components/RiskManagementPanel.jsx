@@ -1,7 +1,10 @@
 import React from 'react';
 import { ShieldCheck, Percent, DollarSign, ArrowUpRight, Anchor, RefreshCw } from 'lucide-react';
+import { getCurrencySymbol } from '../services/currency';
 
-export default function RiskManagementPanel({ riskConfig, setRiskConfig, onRunBacktest }) {
+export default function RiskManagementPanel({ riskConfig, setRiskConfig, onRunBacktest, symbol = 'BTC-USD', currencyPreference = 'auto' }) {
+  const currSym = getCurrencySymbol(symbol, currencyPreference);
+
   const updateRisk = (key, val) => {
     const updated = {
       ...riskConfig,
@@ -21,7 +24,7 @@ export default function RiskManagementPanel({ riskConfig, setRiskConfig, onRunBa
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ShieldCheck size={18} color="#10B981" />
           <h2 style={{ fontSize: '0.98rem', fontWeight: 800, fontFamily: 'var(--font-display)' }}>
-            QUANTITATIVE RISK MANAGEMENT & POSITION SIZING
+            QUANTITATIVE RISK MANAGEMENT & POSITION SIZING ({currSym})
           </h2>
         </div>
         <span className="badge-bull" style={{ fontSize: '0.7rem' }}>DYNAMIC ATR & KELLY</span>
@@ -33,7 +36,7 @@ export default function RiskManagementPanel({ riskConfig, setRiskConfig, onRunBa
         {/* Initial Capital */}
         <div>
           <label style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.2rem' }}>
-            Initial Account Capital ($)
+            Initial Account Capital ({currSym})
           </label>
           <input
             type="number"
@@ -56,7 +59,7 @@ export default function RiskManagementPanel({ riskConfig, setRiskConfig, onRunBa
           >
             <option value="fixed_risk_pct">Fixed Risk % per Trade (Standard)</option>
             <option value="kelly">Half-Kelly Criterion (Optimal Growth)</option>
-            <option value="fixed_cash">Fixed Dollar Amount ($)</option>
+            <option value="fixed_cash">Fixed Cash Amount ({currSym})</option>
             <option value="fixed_shares">Fixed Shares / Contracts</option>
           </select>
         </div>

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles, TrendingUp, TrendingDown, Target, BrainCircuit, Activity,
   Sliders, ArrowUpRight, ArrowDownRight, ShieldCheck, Zap,
-  BarChart3, RefreshCw, Layers, Compass, HelpCircle, AlertCircle, CheckCircle2
+  BarChart3, RefreshCw, Layers, Compass, HelpCircle, AlertCircle, CheckCircle2,
+  Coins
 } from 'lucide-react';
 
 import SymbolSearchSelector from './SymbolSearchSelector';
 import PlotWrapper from './PlotWrapper';
 import { runPricePrediction } from '../services/api';
+import { getCurrencySymbol, formatPrice } from '../services/currency';
 
 const QUICK_TICKERS = [
   { symbol: 'BTC-USD', label: 'BTC', cat: 'Crypto' },
@@ -15,21 +17,25 @@ const QUICK_TICKERS = [
   { symbol: 'MRF.NS', label: 'MRF Tyres', cat: 'NSE India' },
   { symbol: 'RELIANCE.NS', label: 'Reliance', cat: 'NSE India' },
   { symbol: 'AAPL', label: 'Apple', cat: 'US Stock' },
+  { symbol: '^NSEI', label: 'NIFTY 50', cat: 'NSE Index' },
   { symbol: 'SPY', label: 'S&P 500', cat: 'Index' },
   { symbol: 'TSLA', label: 'Tesla', cat: 'US Stock' },
   { symbol: 'GC=F', label: 'Gold', cat: 'Commodity' }
 ];
 
-export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
+export default function PricePredictorView({ initialSymbol = 'BTC-USD', currencyPreference: propCurrency, onCurrencyChange }) {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [horizonDays, setHorizonDays] = useState(30);
   const [modelType, setModelType] = useState('ensemble');
   const [period, setPeriod] = useState('2y');
   const [timeframe, setTimeframe] = useState('1d');
+  const [currencyMode, setCurrencyMode] = useState(propCurrency || 'auto');
 
   const [predictionData, setPredictionData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const activeCurrencySymbol = getCurrencySymbol(symbol, currencyMode);
 
   const fetchPrediction = async (sym = symbol, horizon = horizonDays, model = modelType, trainPeriod = period) => {
     setLoading(true);
@@ -74,6 +80,11 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
   const handlePeriodChange = (newPeriod) => {
     setPeriod(newPeriod);
     fetchPrediction(symbol, horizonDays, modelType, newPeriod);
+  };
+
+  const handleCurrencyChange = (newCurr) => {
+    setCurrencyMode(newCurr);
+    if (onCurrencyChange) onCurrencyChange(newCurr);
   };
 
   // Build Plotly Forecast Trajectory Chart
@@ -195,7 +206,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
     const layout = {
       autosize: true,
       height: 480,
-      margin: { l: 60, r: 35, t: 25, b: 45 },
+      margin: { l: 65, r: 35, t: 25, b: 45 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
       xaxis: {
@@ -207,7 +218,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
         spikedash: 'dot'
       },
       yaxis: {
-        title: 'Price ($)',
+        title: `Price (${activeCurrencySymbol})`,
         titlefont: { color: '#94A3B8', size: 11 },
         gridcolor: 'rgba(255, 255, 255, 0.05)',
         tickfont: { color: '#94A3B8', family: 'JetBrains Mono', size: 11 },
@@ -262,6 +273,18 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
                   AI QUANTITATIVE <span style={{ color: 'var(--accent-primary)' }}>PRICE PREDICTOR</span>
                 </h1>
                 <span className="badge-bull" style={{ fontSize: '0.7rem' }}>MULTI-MODEL ML</span>
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  fontFamily: 'var(--font-mono)',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '4px',
+                  background: activeCurrencySymbol === '₹' ? 'rgba(0, 187, 249, 0.15)' : 'rgba(0, 245, 212, 0.15)',
+                  color: activeCurrencySymbol === '₹' ? '#00BBF9' : '#00F5D4',
+                  border: `1px solid ${activeCurrencySymbol === '₹' ? 'rgba(0, 187, 249, 0.4)' : 'rgba(0, 245, 212, 0.4)'}`
+                }}>
+                  {activeCurrencySymbol === '₹' ? '₹ INR (Indian Rupee)' : '$ USD (Dollar)'}
+                </span>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 Multi-lag feature learning, cyclical Fourier decomposition & probabilistic confidence corridor
@@ -294,11 +317,11 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
 
         </div>
 
-        {/* Universal Search & Horizon Parameter Row */}
+        {/* Universal Search, Currency & Horizon Parameter Row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(260px, 320px) 1fr 1fr 1fr auto',
-          gap: '1rem',
+          gridTemplateColumns: 'minmax(240px, 300px) 130px 1fr 1fr 1fr auto',
+          gap: '0.85rem',
           alignItems: 'center',
           paddingTop: '0.85rem',
           borderTop: '1px solid var(--border-subtle)'
@@ -313,6 +336,23 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
               symbol={symbol}
               setSymbol={handleSymbolChange}
             />
+          </div>
+
+          {/* Currency Toggle (Auto / INR / USD) */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-dim)', marginBottom: '0.25rem', fontWeight: 700 }}>
+              CURRENCY:
+            </label>
+            <select
+              className="input-dark"
+              value={currencyMode}
+              onChange={(e) => handleCurrencyChange(e.target.value)}
+              style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 700, color: activeCurrencySymbol === '₹' ? '#00BBF9' : '#00F5D4' }}
+            >
+              <option value="auto">Auto ({getCurrencySymbol(symbol, 'auto')})</option>
+              <option value="INR">₹ INR (Rupee)</option>
+              <option value="USD">$ USD (Dollar)</option>
+            </select>
           </div>
 
           {/* Forecast Horizon */}
@@ -378,7 +418,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
               className="btn-primary"
               onClick={() => fetchPrediction(symbol, horizonDays, modelType, period)}
               disabled={loading}
-              style={{ minWidth: '150px', height: '38px', justifyContent: 'center' }}
+              style={{ minWidth: '145px', height: '38px', justifyContent: 'center' }}
             >
               {loading ? (
                 <>
@@ -416,7 +456,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
         </div>
       )}
 
-      {/* 6 Key Machine Learning KPI Cards Grid */}
+      {/* 6 Key Machine Learning KPI Cards Grid with Dynamic Rupee / Dollar Formatting */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
@@ -428,7 +468,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
           <span className="metric-title">TARGET PRICE ({horizonDays}D)</span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
             <span className="metric-value" style={{ color: dirColor }}>
-              ${predictionData ? predictionData.target_price?.toLocaleString() : '---'}
+              {predictionData ? formatPrice(predictionData.target_price, symbol, currencyMode, 2) : '---'}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.3rem' }}>
@@ -441,7 +481,9 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
               {predictionData?.predicted_change_pct > 0 ? '+' : ''}
               {predictionData ? predictionData.predicted_change_pct : '0.0'}%
             </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>vs Last ${predictionData?.last_price}</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+              vs Last {formatPrice(predictionData?.last_price, symbol, currencyMode, 2)}
+            </span>
           </div>
         </div>
 
@@ -509,7 +551,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
           <span className="metric-title">PROJECTED SUPPORT FLOOR</span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
             <span className="metric-value" style={{ color: '#00BBF9' }}>
-              ${predictionData ? predictionData.support_level?.toLocaleString() : '---'}
+              {predictionData ? formatPrice(predictionData.support_level, symbol, currencyMode, 2) : '---'}
             </span>
           </div>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.3rem', display: 'block' }}>
@@ -522,7 +564,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
           <span className="metric-title">PROJECTED RESISTANCE</span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
             <span className="metric-value" style={{ color: '#F15BB5' }}>
-              ${predictionData ? predictionData.resistance_level?.toLocaleString() : '---'}
+              {predictionData ? formatPrice(predictionData.resistance_level, symbol, currencyMode, 2) : '---'}
             </span>
           </div>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.3rem', display: 'block' }}>
@@ -539,7 +581,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Sparkles size={18} color="var(--accent-primary)" />
             <h2 style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-              HISTORICAL TRAJECTORY & ML PREDICTIVE PATH ({symbol})
+              HISTORICAL TRAJECTORY & ML PREDICTIVE PATH ({symbol} • {activeCurrencySymbol})
             </h2>
           </div>
           
@@ -585,7 +627,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <Layers size={18} color="var(--accent-primary)" />
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-              MULTI-MODEL QUANTITATIVE CONSENSUS
+              MULTI-MODEL QUANTITATIVE CONSENSUS ({activeCurrencySymbol})
             </h3>
           </div>
 
@@ -618,9 +660,9 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD' }) {
                   </p>
                 </div>
 
-                <div style={{ textAlign: 'right', minWidth: '95px' }}>
+                <div style={{ textAlign: 'right', minWidth: '105px' }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.92rem', color: '#00F5D4' }}>
-                    ${m.target_price?.toLocaleString()}
+                    {formatPrice(m.target_price, symbol, currencyMode, 2)}
                   </span>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: m.expected_change_pct >= 0 ? '#10B981' : '#EF4444' }}>
                     {m.expected_change_pct >= 0 ? '+' : ''}{m.expected_change_pct}%

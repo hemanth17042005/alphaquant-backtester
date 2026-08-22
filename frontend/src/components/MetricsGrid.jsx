@@ -1,11 +1,13 @@
 import React from 'react';
-import { TrendingUp, Award, ShieldAlert, Zap, Target, DollarSign, PieChart, Activity } from 'lucide-react';
+import { TrendingUp, Award, ShieldAlert, Zap, Target, DollarSign, PieChart, Activity, IndianRupee } from 'lucide-react';
+import { getCurrencySymbol, formatPrice, formatCurrencyAmount } from '../services/currency';
 
-export default function MetricsGrid({ metrics }) {
+export default function MetricsGrid({ metrics, symbol = 'BTC-USD', currencyPreference = 'auto' }) {
   if (!metrics) return null;
 
   const isProfit = metrics.net_profit_dollar >= 0;
   const isAlpha = metrics.alpha_pct >= 0;
+  const currSym = getCurrencySymbol(symbol, currencyPreference);
 
   return (
     <div style={{
@@ -18,14 +20,14 @@ export default function MetricsGrid({ metrics }) {
       {/* 1. Net Profit */}
       <div className="kpi-card glass-panel" style={{ borderLeft: `3px solid ${isProfit ? '#10B981' : '#EF4444'}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="kpi-label">Strategy Net ROI</span>
-          <DollarSign size={16} color={isProfit ? '#10B981' : '#EF4444'} />
+          <span className="kpi-label">Strategy Net ROI ({currSym})</span>
+          {currSym === '₹' ? <IndianRupee size={16} color={isProfit ? '#10B981' : '#EF4444'} /> : <DollarSign size={16} color={isProfit ? '#10B981' : '#EF4444'} />}
         </div>
         <div className="kpi-value" style={{ color: isProfit ? '#10B981' : '#EF4444' }}>
           {isProfit ? '+' : ''}{metrics.net_profit_pct}%
         </div>
         <div className="kpi-sub">
-          {isProfit ? '+' : ''}${metrics.net_profit_dollar?.toLocaleString()} • Alpha: {isAlpha ? '+' : ''}{metrics.alpha_pct}%
+          {isProfit ? '+' : ''}{formatPrice(metrics.net_profit_dollar, symbol, currencyPreference, 0)} • Alpha: {isAlpha ? '+' : ''}{metrics.alpha_pct}%
         </div>
       </div>
 
@@ -53,7 +55,7 @@ export default function MetricsGrid({ metrics }) {
           {metrics.profit_factor >= 999 ? '∞' : metrics.profit_factor}
         </div>
         <div className="kpi-sub">
-          Avg Win: ${metrics.avg_win_dollar} / Loss: ${metrics.avg_loss_dollar}
+          Avg Win: {formatPrice(metrics.avg_win_dollar, symbol, currencyPreference, 0)} / Loss: {formatPrice(metrics.avg_loss_dollar, symbol, currencyPreference, 0)}
         </div>
       </div>
 
@@ -67,7 +69,7 @@ export default function MetricsGrid({ metrics }) {
           -{metrics.max_drawdown_pct}%
         </div>
         <div className="kpi-sub">
-          -${metrics.max_drawdown_dollar?.toLocaleString()} ({metrics.max_drawdown_duration_bars} bars under water)
+          -{formatPrice(metrics.max_drawdown_dollar, symbol, currencyPreference, 0)} ({metrics.max_drawdown_duration_bars} bars under water)
         </div>
       </div>
 
@@ -92,7 +94,7 @@ export default function MetricsGrid({ metrics }) {
           <Target size={16} color="#F15BB5" />
         </div>
         <div className="kpi-value" style={{ color: '#F15BB5' }}>
-          {metrics.expectancy_dollar >= 0 ? '+' : ''}${metrics.expectancy_dollar}
+          {metrics.expectancy_dollar >= 0 ? '+' : ''}{formatPrice(metrics.expectancy_dollar, symbol, currencyPreference, 0)}
         </div>
         <div className="kpi-sub">
           {metrics.expectancy_pct}% per trade • CAGR: {metrics.cagr_pct}%
