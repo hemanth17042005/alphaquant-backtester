@@ -74,7 +74,7 @@ export default function SymbolSearchSelector({ symbol, setSymbol, onSelectSymbol
   });
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', zIndex: 10005 }}>
+    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: '100%', zIndex: isOpen ? 999999 : 50 }}>
       
       {/* Trigger Button */}
       <button
@@ -86,6 +86,7 @@ export default function SymbolSearchSelector({ symbol, setSymbol, onSelectSymbol
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.6rem',
+          width: '100%',
           minWidth: '220px',
           cursor: 'pointer',
           padding: '0.5rem 0.85rem',
@@ -115,8 +116,9 @@ export default function SymbolSearchSelector({ symbol, setSymbol, onSelectSymbol
               left: 0,
               right: 0,
               bottom: 0,
-              zIndex: 99990,
-              background: 'rgba(0, 0, 0, 0.25)'
+              zIndex: 999998,
+              background: 'rgba(0, 0, 0, 0.45)',
+              backdropFilter: 'blur(2px)'
             }}
             onClick={() => setIsOpen(false)}
           />
@@ -127,13 +129,13 @@ export default function SymbolSearchSelector({ symbol, setSymbol, onSelectSymbol
               position: 'absolute',
               top: 'calc(100% + 8px)',
               left: 0,
-              width: '440px',
+              width: '450px',
               maxWidth: '92vw',
-              zIndex: 99999,
+              zIndex: 9999999,
               padding: '1rem',
               background: '#0F172A',
-              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 245, 212, 0.25)',
-              border: '1px solid var(--accent-primary)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 30px rgba(0, 245, 212, 0.3)',
+              border: '1.5px solid var(--accent-primary)',
               borderRadius: '12px'
             }}
           >

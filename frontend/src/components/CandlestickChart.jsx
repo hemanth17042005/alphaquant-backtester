@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PlotWrapper from './PlotWrapper';
-import { Eye, EyeOff, Maximize2, Layers } from 'lucide-react';
+import { Eye, EyeOff, Maximize2, Minimize2, Layers } from 'lucide-react';
 
 export default function CandlestickChart({
   candles = [],
@@ -16,6 +16,16 @@ export default function CandlestickChart({
   const [showBB, setShowBB] = useState(false);
   const [showSMC, setShowSMC] = useState(true);
   const [showTrades, setShowTrades] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const actualCandles = (candles && candles.length > 0) ? candles : (marketData?.candles || []);
   const actualOBs = (orderBlocks && orderBlocks.length > 0) ? orderBlocks : (marketData?.order_blocks || []);
@@ -229,7 +239,7 @@ export default function CandlestickChart({
 
   const layout = {
     autosize: true,
-    height: 520,
+    height: isFullscreen ? (window.innerHeight ? window.innerHeight - 110 : 700) : 520,
     margin: { l: 55, r: 25, t: 30, b: 40 },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
@@ -255,7 +265,28 @@ export default function CandlestickChart({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.25rem' }}>
+    <div
+      className="glass-panel"
+      style={isFullscreen ? {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999999,
+        background: '#080B11',
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 0,
+        border: 'none',
+        overflow: 'hidden'
+      } : {
+        padding: '1.25rem',
+        marginBottom: '1.25rem',
+        position: 'relative'
+      }}
+    >
       
       {/* Chart Control Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
@@ -272,7 +303,7 @@ export default function CandlestickChart({
           </span>
         </div>
 
-        {/* Toggle Overlays */}
+        {/* Toggle Overlays & Fullscreen Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
           
           <button
@@ -340,17 +371,41 @@ export default function CandlestickChart({
             <span>Trades ({trades.length})</span>
           </button>
 
+          {/* Fullscreen Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="btn-secondary"
+            style={{
+              padding: '0.3rem 0.65rem',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              borderColor: isFullscreen ? 'var(--accent-primary)' : 'var(--border-subtle)',
+              color: isFullscreen ? '#00F5D4' : 'var(--text-muted)',
+              background: isFullscreen ? 'rgba(0, 245, 212, 0.15)' : undefined
+            }}
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen Chart"}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{isFullscreen ? 'Exit Fullscreen' : 'Full Screen'}</span>
+          </button>
+
         </div>
 
       </div>
 
       {/* Plotly Canvas */}
-      <PlotWrapper
-        data={plotData}
-        layout={layout}
-        config={{ responsive: true, displayModeBar: false }}
-        style={{ width: '100%', height: '520px' }}
-      />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <PlotWrapper
+          data={plotData}
+          layout={layout}
+          config={{ responsive: true, displayModeBar: false }}
+          style={{ width: '100%', height: isFullscreen ? 'calc(100vh - 100px)' : '520px' }}
+        />
+      </div>
 
     </div>
   );

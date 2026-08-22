@@ -3,7 +3,7 @@ import {
   Sparkles, TrendingUp, TrendingDown, Target, BrainCircuit, Activity,
   Sliders, ArrowUpRight, ArrowDownRight, ShieldCheck, Zap,
   BarChart3, RefreshCw, Layers, Compass, HelpCircle, AlertCircle, CheckCircle2,
-  Coins
+  Coins, Maximize2, Minimize2, X
 } from 'lucide-react';
 
 import SymbolSearchSelector from './SymbolSearchSelector';
@@ -16,6 +16,7 @@ const QUICK_TICKERS = [
   { symbol: 'NVDA', label: 'NVIDIA', cat: 'US Tech' },
   { symbol: 'MRF.NS', label: 'MRF Tyres', cat: 'NSE India' },
   { symbol: 'RELIANCE.NS', label: 'Reliance', cat: 'NSE India' },
+  { symbol: 'TATAPOWER.NS', label: 'Tata Power', cat: 'NSE India' },
   { symbol: 'AAPL', label: 'Apple', cat: 'US Stock' },
   { symbol: '^NSEI', label: 'NIFTY 50', cat: 'NSE Index' },
   { symbol: 'SPY', label: 'S&P 500', cat: 'Index' },
@@ -30,12 +31,24 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
   const [period, setPeriod] = useState('2y');
   const [timeframe, setTimeframe] = useState('1d');
   const [currencyMode, setCurrencyMode] = useState(propCurrency || 'auto');
+  const [isChartFullscreen, setIsChartFullscreen] = useState(false);
 
   const [predictionData, setPredictionData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const activeCurrencySymbol = getCurrencySymbol(symbol, currencyMode);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsChartFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const fetchPrediction = async (sym = symbol, horizon = horizonDays, model = modelType, trainPeriod = period) => {
     setLoading(true);
@@ -205,7 +218,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
 
     const layout = {
       autosize: true,
-      height: 480,
+      height: isChartFullscreen ? (window.innerHeight ? window.innerHeight - 110 : 700) : 480,
       margin: { l: 65, r: 35, t: 25, b: 45 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
@@ -248,8 +261,16 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
-      {/* Top Banner & Control Bar */}
-      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+      {/* Top Banner & Control Bar with absolute high z-index & visible overflow */}
+      <div
+        className="glass-panel"
+        style={{
+          padding: '1.25rem 1.5rem',
+          position: 'relative',
+          zIndex: 1000,
+          overflow: 'visible'
+        }}
+      >
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
           
@@ -324,11 +345,14 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
           gap: '0.85rem',
           alignItems: 'center',
           paddingTop: '0.85rem',
-          borderTop: '1px solid var(--border-subtle)'
+          borderTop: '1px solid var(--border-subtle)',
+          position: 'relative',
+          zIndex: 1001,
+          overflow: 'visible'
         }}>
           
           {/* Universal Stock Search */}
-          <div>
+          <div style={{ position: 'relative', zIndex: 1002, overflow: 'visible' }}>
             <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-dim)', marginBottom: '0.25rem', fontWeight: 700 }}>
               SEARCH ANY STOCK / ASSET (GLOBAL):
             </label>
@@ -460,7 +484,9 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-        gap: '1rem'
+        gap: '1rem',
+        position: 'relative',
+        zIndex: 10
       }}>
         
         {/* Card 1: Target Price & Horizon Return */}
@@ -574,8 +600,29 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
 
       </div>
 
-      {/* Main Interactive Forecast Chart */}
-      <div className="glass-panel" style={{ padding: '1.25rem' }}>
+      {/* Main Interactive Forecast Chart (Supports Full-Screen Modal) */}
+      <div
+        className="glass-panel"
+        style={isChartFullscreen ? {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999999,
+          background: '#080B11',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 0,
+          border: 'none',
+          overflow: 'hidden'
+        } : {
+          padding: '1.25rem',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -585,32 +632,57 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
             </h2>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#00F5D4' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00F5D4', display: 'inline-block' }} />
-              Forecast Center
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: 'rgba(0, 245, 212, 0.6)' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'rgba(0, 245, 212, 0.25)', display: 'inline-block' }} />
-              80%/95% Confidence Corridor
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#10B981' }}>
-              <span style={{ width: '8px', height: '2px', background: '#10B981', display: 'inline-block' }} />
-              Bull Case
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#EF4444' }}>
-              <span style={{ width: '8px', height: '2px', background: '#EF4444', display: 'inline-block' }} />
-              Bear Case
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#00F5D4' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00F5D4', display: 'inline-block' }} />
+                Forecast Center
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: 'rgba(0, 245, 212, 0.6)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'rgba(0, 245, 212, 0.25)', display: 'inline-block' }} />
+                80%/95% Confidence Corridor
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#10B981' }}>
+                <span style={{ width: '8px', height: '2px', background: '#10B981', display: 'inline-block' }} />
+                Bull Case
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#EF4444' }}>
+                <span style={{ width: '8px', height: '2px', background: '#EF4444', display: 'inline-block' }} />
+                Bear Case
+              </span>
+            </div>
+
+            {/* Fullscreen Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsChartFullscreen(!isChartFullscreen)}
+              className="btn-secondary"
+              style={{
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderColor: isChartFullscreen ? 'var(--accent-primary)' : undefined,
+                color: isChartFullscreen ? '#00F5D4' : undefined,
+                background: isChartFullscreen ? 'rgba(0, 245, 212, 0.15)' : undefined
+              }}
+              title={isChartFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen Chart"}
+            >
+              {isChartFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              <span>{isChartFullscreen ? 'Exit Fullscreen' : 'Full Screen'}</span>
+            </button>
           </div>
         </div>
 
         {/* Plotly Interactive Render */}
-        <PlotWrapper
-          data={chartData}
-          layout={chartLayout}
-          style={{ height: '480px' }}
-        />
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <PlotWrapper
+            data={chartData}
+            layout={chartLayout}
+            style={{ width: '100%', height: isChartFullscreen ? 'calc(100vh - 100px)' : '480px' }}
+          />
+        </div>
 
       </div>
 
@@ -619,7 +691,9 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
         display: 'grid',
         gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(300px, 1fr)',
         gap: '1.25rem',
-        alignItems: 'start'
+        alignItems: 'start',
+        position: 'relative',
+        zIndex: 1
       }}>
         
         {/* Left: Multi-Model Consensus Breakdown */}
