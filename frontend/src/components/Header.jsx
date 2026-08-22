@@ -15,6 +15,7 @@ export default function Header({
   loading,
   popularSymbols = [],
   onOpenWelcome,
+  onOpenFactsheet,
   activeMode = 'backtester',
   setActiveMode,
   currencyPreference = 'auto',
@@ -145,6 +146,29 @@ export default function Header({
             >
               <Home size={14} />
               <span>Start Menu</span>
+            </button>
+          )}
+
+          {/* 1-Click Institutional Factsheet PDF Export */}
+          {onOpenFactsheet && (
+            <button
+              type="button"
+              id="btn-open-factsheet"
+              onClick={onOpenFactsheet}
+              className="btn-secondary"
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderColor: 'rgba(0, 245, 212, 0.3)',
+                color: '#00F5D4'
+              }}
+              title="Generate Goldman Sachs / BlackRock Style Strategy Factsheet (PDF)"
+            >
+              <FileText size={14} />
+              <span>Factsheet (PDF)</span>
             </button>
           )}
 

@@ -149,3 +149,48 @@ export async function exportTradesCsv(trades) {
   a.click();
   a.remove();
 }
+
+// ----------------- PAPER TRADING CLIENT API -----------------
+
+export async function fetchPaperPortfolio() {
+  const res = await fetch(`${API_BASE}/paper/portfolio`);
+  if (!res.ok) throw new Error('Failed to fetch paper portfolio');
+  return res.json();
+}
+
+export async function submitPaperOrder(orderData) {
+  const res = await fetch(`${API_BASE}/paper/order`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orderData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Order execution failed' }));
+    throw new Error(err.detail || 'Order execution failed');
+  }
+  return res.json();
+}
+
+export async function closePaperPosition(positionId) {
+  const res = await fetch(`${API_BASE}/paper/close`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ position_id: positionId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to close position' }));
+    throw new Error(err.detail || 'Failed to close position');
+  }
+  return res.json();
+}
+
+export async function resetPaperAccount(initialCapital = 100000) {
+  const res = await fetch(`${API_BASE}/paper/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initial_capital: initialCapital })
+  });
+  if (!res.ok) throw new Error('Failed to reset account');
+  return res.json();
+}
+

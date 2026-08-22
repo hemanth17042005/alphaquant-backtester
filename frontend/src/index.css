@@ -321,3 +321,26 @@ select.input-dark {
 .animate-pulse-glow {
   animation: pulse-glow 2s infinite ease-in-out;
 }
+
+/* Institutional Factsheet Print & PDF Styling */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .no-print, header, nav, button {
+    display: none !important;
+  }
+  .factsheet-container {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+  }
+  #factsheet-print-area {
+    color: #0F172A !important;
+    padding: 0 !important;
+  }
+}
+

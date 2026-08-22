@@ -18,6 +18,7 @@ import MonteCarloView from './components/MonteCarloView';
 import OptimizationHeatmap from './components/OptimizationHeatmap';
 import TradeLogTable from './components/TradeLogTable';
 import PageSummaryExplainer from './components/PageSummaryExplainer';
+import FactsheetModal from './components/FactsheetModal';
 
 import { fetchSymbols, fetchPresets, fetchMarketHistory, runBacktest } from './services/api';
 import { getCurrencySymbol } from './services/currency';
@@ -25,6 +26,9 @@ import { getCurrencySymbol } from './services/currency';
 export default function App() {
   // Top-Level View Mode: Welcome Landing Screen vs Active Terminal
   const [showWelcome, setShowWelcome] = useState(true);
+
+  // Modal State for 1-Click Institutional Factsheet (PDF Export)
+  const [isFactsheetOpen, setIsFactsheetOpen] = useState(false);
 
   // Active Application Mode: 'predictor' (AI Price Forecaster) vs 'backtester' (Algorithmic Backtester)
   const [activeMode, setActiveMode] = useState('predictor');
@@ -222,6 +226,7 @@ export default function App() {
         loading={loading}
         popularSymbols={popularSymbols}
         onOpenWelcome={() => setShowWelcome(true)}
+        onOpenFactsheet={() => setIsFactsheetOpen(true)}
         activeMode={activeMode}
         setActiveMode={setActiveMode}
         currencyPreference={currencyPreference}
@@ -437,6 +442,18 @@ export default function App() {
 
         </div>
       )}
+
+      {/* 1-Click Institutional Factsheet PDF Modal */}
+      <FactsheetModal
+        isOpen={isFactsheetOpen}
+        onClose={() => setIsFactsheetOpen(false)}
+        symbol={symbol}
+        currencyPreference={currencyPreference}
+        backtestResult={backtestResult}
+        strategyConfig={strategyConfig}
+        timeframe={timeframe}
+        period={period}
+      />
 
     </div>
   );

@@ -21,6 +21,9 @@ from backend.app.engine.monte_carlo import run_monte_carlo_simulation
 from backend.app.engine.optimizer import run_grid_optimization
 from backend.app.engine.strategy import STRATEGY_PRESETS
 from backend.app.engine.ml_predictor import generate_price_prediction
+from backend.app.engine.paper_trader import (
+    get_paper_portfolio, execute_paper_order, close_paper_position, reset_paper_account
+)
 
 router = APIRouter(prefix="/api")
 
@@ -60,6 +63,67 @@ async def get_live_quote(request: Request, symbol: str = "BTC-USD"):
             pass
     quote = fetch_live_quote(sym)
     return quote
+
+# ----------------- LIVE PAPER TRADING SIMULATOR ENDPOINTS -----------------
+
+@router.api_route("/paper/portfolio", methods=["GET", "POST"])
+async def get_paper_portfolio_route():
+    """Retrieve virtual paper trading portfolio balance, open positions, and history."""
+    return get_paper_portfolio()
+
+@router.api_route("/paper/order", methods=["POST"])
+async def execute_paper_order_route(request: Request):
+    """Execute a virtual paper trading market, limit, or stop order against live prices."""
+    try:
+        body = await request.json()
+        symbol = body.get("symbol", "BTC-USD")
+        side = body.get("side", "BUY")
+        order_type = body.get("order_type", "MARKET")
+        quantity = float(body.get("quantity", 1.0))
+        limit_price = body.get("limit_price")
+        stop_loss = body.get("stop_loss")
+        take_profit = body.get("take_profit")
+        
+        result = execute_paper_order(
+            symbol=symbol,
+            side=side,
+            order_type=order_type,
+            quantity=quantity,
+            limit_price=limit_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/paper/close", methods=["POST"])
+async def close_paper_position_route(request: Request):
+    """Close an open paper trading position at live market price."""
+    try:
+        body = await request.json()
+        position_id = body.get("position_id")
+        if not position_id:
+            raise HTTPException(status_code=400, detail="position_id is required")
+        result = close_paper_position(position_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/paper/reset", methods=["POST"])
+async def reset_paper_account_route(request: Request):
+    """Reset virtual paper trading funds and open positions."""
+    try:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+        initial_capital = float(body.get("initial_capital", 100000.0))
+        result = reset_paper_account(initial_capital)
+        return {"success": True, "message": f"Account reset to ${initial_capital:,.2f}", "portfolio": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.api_route("/strategies/presets", methods=["GET", "POST"])
 async def get_strategy_presets():
