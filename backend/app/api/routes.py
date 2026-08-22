@@ -24,6 +24,10 @@ from backend.app.engine.ml_predictor import generate_price_prediction
 from backend.app.engine.paper_trader import (
     get_paper_portfolio, execute_paper_order, close_paper_position, reset_paper_account
 )
+from backend.app.engine.sentiment_analyzer import fetch_market_sentiment
+from backend.app.engine.alert_dispatcher import test_alert_dispatch
+from backend.app.engine.portfolio_optimizer import run_multi_asset_portfolio
+from backend.app.engine.code_runner import execute_custom_strategy, DEFAULT_STARTER_CODE
 
 router = APIRouter(prefix="/api")
 
@@ -124,6 +128,82 @@ async def reset_paper_account_route(request: Request):
         return {"success": True, "message": f"Account reset to ${initial_capital:,.2f}", "portfolio": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# ----------------- AI MARKET SENTIMENT ENDPOINT -----------------
+
+@router.api_route("/sentiment/news", methods=["GET", "POST"])
+async def get_market_sentiment_route(request: Request, symbol: str = "BTC-USD"):
+    """Fetch live news headlines and calculate NLP FinBERT sentiment polarity & Fear/Greed index."""
+    sym = symbol
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            sym = body.get("symbol", sym)
+        except Exception:
+            pass
+    return fetch_market_sentiment(sym)
+
+# ----------------- TELEGRAM & DISCORD WEBHOOK ALERTS ENDPOINT -----------------
+
+@router.api_route("/alerts/webhook/test", methods=["POST"])
+async def test_alert_route(request: Request):
+    """Dispatch a test trade alert payload to Discord Webhook or Telegram Bot."""
+    try:
+        body = await request.json()
+        platform = body.get("platform", "discord")
+        destination = body.get("destination", "")
+        chat_id = body.get("chat_id")
+        symbol = body.get("symbol", "BTC-USD")
+        
+        if not destination:
+            raise HTTPException(status_code=400, detail="Webhook URL or Bot Token is required.")
+            
+        result = test_alert_dispatch(platform, destination, chat_id, symbol)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ----------------- MULTI-ASSET PORTFOLIO OPTIMIZER ENDPOINT -----------------
+
+@router.api_route("/portfolio/multi_asset", methods=["POST"])
+async def run_multi_asset_route(request: Request):
+    """Backtest a multi-asset basket with weights, correlation matrix, and combined equity curve."""
+    try:
+        body = await request.json()
+        basket = body.get("basket", [])
+        timeframe = body.get("timeframe", "1d")
+        period = body.get("period", "1y")
+        initial_capital = float(body.get("initial_capital", 100000.0))
+        
+        result = run_multi_asset_portfolio(basket, timeframe, period, initial_capital)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ----------------- CUSTOM PYTHON STRATEGY CODE RUNNER ENDPOINT -----------------
+
+@router.api_route("/strategy/custom_code", methods=["POST"])
+async def execute_custom_strategy_route(request: Request):
+    """Execute in-browser Python strategy script and compute full backtest metrics."""
+    try:
+        body = await request.json()
+        code = body.get("code", "")
+        symbol = body.get("symbol", "BTC-USD")
+        timeframe = body.get("timeframe", "1d")
+        period = body.get("period", "2y")
+        initial_capital = float(body.get("initial_capital", 100000.0))
+        
+        if not code.strip():
+            raise HTTPException(status_code=400, detail="Python strategy code is empty.")
+            
+        result = execute_custom_strategy(code, symbol, timeframe, period, initial_capital)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/strategy/custom_code/template", methods=["GET"])
+async def get_starter_code_template():
+    return {"starter_code": DEFAULT_STARTER_CODE}
 
 @router.api_route("/strategies/presets", methods=["GET", "POST"])
 async def get_strategy_presets():

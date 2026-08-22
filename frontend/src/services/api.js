@@ -194,3 +194,75 @@ export async function resetPaperAccount(initialCapital = 100000) {
   return res.json();
 }
 
+// ----------------- AI MARKET SENTIMENT CLIENT API -----------------
+
+export async function fetchMarketSentiment(symbol) {
+  try {
+    let res = await fetch(`${API_BASE}/sentiment/news?symbol=${encodeURIComponent(symbol || 'BTC-USD')}`);
+    if (!res.ok) {
+      res = await fetch(`${API_BASE}/sentiment/news`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: symbol || 'BTC-USD' })
+      });
+    }
+    if (res.ok) return await res.json();
+    throw new Error(`Sentiment error (HTTP ${res.status})`);
+  } catch (err) {
+    console.error('fetchMarketSentiment error:', err);
+    return null;
+  }
+}
+
+// ----------------- TELEGRAM & DISCORD WEBHOOK ALERTS CLIENT API -----------------
+
+export async function testAlertWebhook(alertData) {
+  const res = await fetch(`${API_BASE}/alerts/webhook/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(alertData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to deliver webhook alert' }));
+    throw new Error(err.detail || 'Webhook dispatch failed');
+  }
+  return res.json();
+}
+
+// ----------------- MULTI-ASSET PORTFOLIO CLIENT API -----------------
+
+export async function runMultiAssetPortfolio(portfolioData) {
+  const res = await fetch(`${API_BASE}/portfolio/multi_asset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(portfolioData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Multi-asset portfolio simulation failed' }));
+    throw new Error(err.detail || 'Portfolio backtest failed');
+  }
+  return res.json();
+}
+
+// ----------------- CUSTOM PYTHON STRATEGY CODE RUNNER CLIENT API -----------------
+
+export async function runCustomStrategyCode(codeData) {
+  const res = await fetch(`${API_BASE}/strategy/custom_code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(codeData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Custom strategy execution failed' }));
+    throw new Error(err.detail || 'Strategy execution failed');
+  }
+  return res.json();
+}
+
+export async function fetchStarterCodeTemplate() {
+  const res = await fetch(`${API_BASE}/strategy/custom_code/template`);
+  if (!res.ok) throw new Error('Failed to load starter code');
+  return res.json();
+}
+
+

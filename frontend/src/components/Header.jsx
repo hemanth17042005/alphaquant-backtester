@@ -1,5 +1,9 @@
 import React from 'react';
-import { Play, TrendingUp, ShieldCheck, Activity, Database, RefreshCw, Search, Home, BrainCircuit, Coins, IndianRupee, DollarSign } from 'lucide-react';
+import {
+  Play, TrendingUp, ShieldCheck, Activity, Database, RefreshCw, Search, Home,
+  BrainCircuit, Coins, IndianRupee, DollarSign, Gamepad2, FileText,
+  Briefcase, Bell, Code
+} from 'lucide-react';
 import SymbolSearchSelector from './SymbolSearchSelector';
 import LivePriceTickerCard from './LivePriceTickerCard';
 import { getCurrencySymbol } from '../services/currency';
@@ -16,6 +20,10 @@ export default function Header({
   popularSymbols = [],
   onOpenWelcome,
   onOpenFactsheet,
+  onOpenPaperTrading,
+  onOpenPortfolio,
+  onOpenAlerts,
+  onOpenCodeEditor,
   activeMode = 'backtester',
   setActiveMode,
   currencyPreference = 'auto',
@@ -169,6 +177,98 @@ export default function Header({
             >
               <FileText size={14} />
               <span>Factsheet (PDF)</span>
+            </button>
+          )}
+
+          {/* Live Paper Trading Simulator */}
+          {onOpenPaperTrading && (
+            <button
+              type="button"
+              id="btn-open-paper-trading"
+              onClick={onOpenPaperTrading}
+              className="btn-secondary"
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderColor: 'rgba(241, 91, 181, 0.4)',
+                color: '#F15BB5'
+              }}
+              title="Open Live Paper Trading Simulation with Virtual Funds"
+            >
+              <Gamepad2 size={14} />
+              <span>Paper Trading</span>
+            </button>
+          )}
+
+          {/* Multi-Asset Portfolio Rebalancer */}
+          {onOpenPortfolio && (
+            <button
+              type="button"
+              id="btn-open-portfolio"
+              onClick={onOpenPortfolio}
+              className="btn-secondary"
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderColor: 'rgba(155, 93, 229, 0.4)',
+                color: '#9B5DE5'
+              }}
+              title="Multi-Asset Basket & Correlation Matrix"
+            >
+              <Briefcase size={14} />
+              <span>Portfolio Basket</span>
+            </button>
+          )}
+
+          {/* Trade Signal Webhook Alerts */}
+          {onOpenAlerts && (
+            <button
+              type="button"
+              id="btn-open-alerts"
+              onClick={onOpenAlerts}
+              className="btn-secondary"
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderColor: 'rgba(0, 187, 249, 0.4)',
+                color: '#00BBF9'
+              }}
+              title="Configure Telegram & Discord Webhook Signals"
+            >
+              <Bell size={14} />
+              <span>Alerts</span>
+            </button>
+          )}
+
+          {/* Custom Python Strategy IDE */}
+          {onOpenCodeEditor && (
+            <button
+              type="button"
+              id="btn-open-code-editor"
+              onClick={onOpenCodeEditor}
+              className="btn-secondary"
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                borderColor: 'rgba(0, 245, 212, 0.4)',
+                color: '#00F5D4'
+              }}
+              title="Write & Execute Custom Python Strategies in Browser"
+            >
+              <Code size={14} />
+              <span>Python IDE</span>
             </button>
           )}
 

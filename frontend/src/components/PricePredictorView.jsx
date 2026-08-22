@@ -10,6 +10,7 @@ import SymbolSearchSelector from './SymbolSearchSelector';
 import PlotWrapper from './PlotWrapper';
 import PageSummaryExplainer from './PageSummaryExplainer';
 import LivePriceTickerCard from './LivePriceTickerCard';
+import SentimentAnalysisCard from './SentimentAnalysisCard';
 import { runPricePrediction } from '../services/api';
 import { getCurrencySymbol, formatPrice } from '../services/currency';
 
@@ -797,6 +798,9 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
         </div>
 
       </div>
+
+      {/* Real-time NLP News Sentiment & Fear/Greed Card */}
+      <SentimentAnalysisCard symbol={symbol} />
 
       {/* Comprehensive Bottom Executive Summary & Technical Guide */}
       <PageSummaryExplainer

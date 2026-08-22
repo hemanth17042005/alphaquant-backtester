@@ -19,6 +19,10 @@ import OptimizationHeatmap from './components/OptimizationHeatmap';
 import TradeLogTable from './components/TradeLogTable';
 import PageSummaryExplainer from './components/PageSummaryExplainer';
 import FactsheetModal from './components/FactsheetModal';
+import PaperTradingModal from './components/PaperTradingModal';
+import MultiAssetPortfolioModal from './components/MultiAssetPortfolioModal';
+import AlertsConfigModal from './components/AlertsConfigModal';
+import CustomCodeEditorModal from './components/CustomCodeEditorModal';
 
 import { fetchSymbols, fetchPresets, fetchMarketHistory, runBacktest } from './services/api';
 import { getCurrencySymbol } from './services/currency';
@@ -27,8 +31,12 @@ export default function App() {
   // Top-Level View Mode: Welcome Landing Screen vs Active Terminal
   const [showWelcome, setShowWelcome] = useState(true);
 
-  // Modal State for 1-Click Institutional Factsheet (PDF Export)
+  // Modal States for Institutional Workstation Tools
   const [isFactsheetOpen, setIsFactsheetOpen] = useState(false);
+  const [isPaperTradingOpen, setIsPaperTradingOpen] = useState(false);
+  const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false);
 
   // Active Application Mode: 'predictor' (AI Price Forecaster) vs 'backtester' (Algorithmic Backtester)
   const [activeMode, setActiveMode] = useState('predictor');
@@ -227,6 +235,10 @@ export default function App() {
         popularSymbols={popularSymbols}
         onOpenWelcome={() => setShowWelcome(true)}
         onOpenFactsheet={() => setIsFactsheetOpen(true)}
+        onOpenPaperTrading={() => setIsPaperTradingOpen(true)}
+        onOpenPortfolio={() => setIsPortfolioOpen(true)}
+        onOpenAlerts={() => setIsAlertsOpen(true)}
+        onOpenCodeEditor={() => setIsCodeEditorOpen(true)}
         activeMode={activeMode}
         setActiveMode={setActiveMode}
         currencyPreference={currencyPreference}
@@ -453,6 +465,36 @@ export default function App() {
         strategyConfig={strategyConfig}
         timeframe={timeframe}
         period={period}
+      />
+
+      {/* Live Paper Trading Simulator Modal */}
+      <PaperTradingModal
+        isOpen={isPaperTradingOpen}
+        onClose={() => setIsPaperTradingOpen(false)}
+        initialSymbol={symbol}
+        currencyPreference={currencyPreference}
+      />
+
+      {/* Multi-Asset Portfolio Rebalancer Modal */}
+      <MultiAssetPortfolioModal
+        isOpen={isPortfolioOpen}
+        onClose={() => setIsPortfolioOpen(false)}
+        currencyPreference={currencyPreference}
+      />
+
+      {/* Trade Signal Webhook Alerts Modal */}
+      <AlertsConfigModal
+        isOpen={isAlertsOpen}
+        onClose={() => setIsAlertsOpen(false)}
+        symbol={symbol}
+      />
+
+      {/* Custom Python Strategy IDE Modal */}
+      <CustomCodeEditorModal
+        isOpen={isCodeEditorOpen}
+        onClose={() => setIsCodeEditorOpen(false)}
+        initialSymbol={symbol}
+        currencyPreference={currencyPreference}
       />
 
     </div>
