@@ -398,3 +398,121 @@ def parse_uploaded_csv(file_content: bytes) -> pd.DataFrame:
     import io
     df = pd.read_csv(io.BytesIO(file_content))
     return clean_ohlcv_dataframe(df)
+
+def fetch_live_quote(symbol: str) -> Dict[str, Any]:
+    """
+    Fetch real-time live market quote for any stock, crypto, forex, ETF or index.
+    Returns current price, previous close, net change, % change, day high/low, and market status.
+    """
+    symbol = symbol.upper().strip()
+    
+    # 1. Synthetic sample assets
+    if symbol in SAMPLE_PRESETS:
+        preset = SAMPLE_PRESETS[symbol]
+        base_price = 165.0 if "BULL" in symbol else 100.0 if "CHOP" in symbol else 80.0
+        curr_price = round(base_price * (1 + np.random.normal(0.001, 0.004)), 2)
+        prev_close = round(base_price * 0.995, 2)
+        chg = round(curr_price - prev_close, 2)
+        pct = round((chg / prev_close) * 100, 2)
+        return {
+            "symbol": symbol,
+            "name": preset.get("name", symbol),
+            "current_price": curr_price,
+            "previous_close": prev_close,
+            "change": chg,
+            "change_pct": pct,
+            "day_high": round(curr_price * 1.012, 2),
+            "day_low": round(curr_price * 0.988, 2),
+            "volume": 1250000,
+            "currency": "USD",
+            "market_status": "SIMULATED LIVE",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    # 2. Candidate tickers for live quote fetch
+    candidates = [symbol]
+    if not symbol.endswith(".NS") and not symbol.endswith(".BO") and "." not in symbol and not symbol.startswith("^") and "-" not in symbol:
+        candidates.append(f"{symbol}.NS")
+        candidates.append(f"{symbol}.BO")
+        candidates.append(f"^{symbol}")
+        
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    
+    for candidate in candidates:
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{candidate}?range=5d&interval=1d"
+            resp = requests.get(url, headers=headers, verify=False, timeout=3.5)
+            if resp.status_code == 200:
+                data = resp.json()
+                result = data.get("chart", {}).get("result", [])
+                if result and len(result) > 0:
+                    meta = result[0].get("meta", {})
+                    current_price = meta.get("regularMarketPrice")
+                    prev_close = meta.get("previousClose") or meta.get("chartPreviousClose") or current_price
+                    if current_price is not None:
+                        change = round(current_price - prev_close, 2) if prev_close else 0.0
+                        change_pct = round((change / prev_close) * 100, 2) if prev_close else 0.0
+                        currency = meta.get("currency", "INR" if candidate.endswith((".NS", ".BO")) or "INR" in candidate else "USD")
+                        day_high = meta.get("regularMarketDayHigh")
+                        day_low = meta.get("regularMarketDayLow")
+                        return {
+                            "symbol": symbol,
+                            "resolved_ticker": candidate,
+                            "name": meta.get("shortName") or meta.get("longName") or symbol,
+                            "current_price": round(current_price, 2),
+                            "previous_close": round(prev_close, 2) if prev_close else round(current_price, 2),
+                            "change": change,
+                            "change_pct": change_pct,
+                            "day_high": round(day_high, 2) if day_high is not None else round(current_price * 1.01, 2),
+                            "day_low": round(day_low, 2) if day_low is not None else round(current_price * 0.99, 2),
+                            "volume": meta.get("regularMarketVolume", 0),
+                            "currency": currency,
+                            "exchange": meta.get("exchangeName", "GLOBAL"),
+                            "market_status": "LIVE MARKET",
+                            "timestamp": datetime.now().isoformat()
+                        }
+        except Exception as e:
+            continue
+
+    # 3. Fallback from latest cached historical bar
+    try:
+        df = fetch_market_data(symbol, timeframe="1d", period="1mo", use_cache=True)
+        if len(df) > 0:
+            last_bar = df.iloc[-1]
+            prev_bar = df.iloc[-2] if len(df) > 1 else last_bar
+            curr_p = float(last_bar["close"])
+            prev_c = float(prev_bar["close"])
+            chg = round(curr_p - prev_c, 2)
+            pct = round((chg / prev_c) * 100, 2) if prev_c else 0.0
+            return {
+                "symbol": symbol,
+                "name": symbol,
+                "current_price": round(curr_p, 2),
+                "previous_close": round(prev_c, 2),
+                "change": chg,
+                "change_pct": pct,
+                "day_high": round(float(last_bar["high"]), 2),
+                "day_low": round(float(last_bar["low"]), 2),
+                "volume": int(last_bar.get("volume", 0)),
+                "currency": "INR" if symbol.endswith((".NS", ".BO")) else "USD",
+                "market_status": "LATEST CLOSE",
+                "timestamp": str(last_bar["timestamp"])
+            }
+    except Exception:
+        pass
+
+    return {
+        "symbol": symbol,
+        "name": symbol,
+        "current_price": 100.0,
+        "previous_close": 100.0,
+        "change": 0.0,
+        "change_pct": 0.0,
+        "day_high": 100.0,
+        "day_low": 100.0,
+        "volume": 0,
+        "currency": "USD",
+        "market_status": "UNAVAILABLE",
+        "timestamp": datetime.now().isoformat()
+    }
+

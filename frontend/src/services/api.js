@@ -26,6 +26,24 @@ export async function searchSymbols(query) {
   }
 }
 
+export async function fetchLiveQuote(symbol) {
+  try {
+    let res = await fetch(`${API_BASE}/quote/live?symbol=${encodeURIComponent(symbol || 'BTC-USD')}`);
+    if (!res.ok) {
+      res = await fetch(`${API_BASE}/quote/live`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: symbol || 'BTC-USD' })
+      });
+    }
+    if (res.ok) return await res.json();
+    throw new Error(`Quote error (HTTP ${res.status})`);
+  } catch (err) {
+    console.error('fetchLiveQuote error:', err);
+    return null;
+  }
+}
+
 export async function fetchPresets() {
   const res = await fetch(`${API_BASE}/strategies/presets`);
   if (!res.ok) throw new Error('Failed to fetch strategy presets');

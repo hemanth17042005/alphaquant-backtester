@@ -8,7 +8,7 @@ import csv
 from typing import List, Dict, Any, Optional
 
 from backend.app.data.fetcher import (
-    fetch_market_data, POPULAR_SYMBOLS, parse_uploaded_csv, search_symbols
+    fetch_market_data, POPULAR_SYMBOLS, parse_uploaded_csv, search_symbols, fetch_live_quote
 )
 from backend.app.data.sample_data import SAMPLE_PRESETS
 from backend.app.indicators.indicator_manager import calculate_all_indicators
@@ -47,6 +47,19 @@ async def search_market_symbols(request: Request, q: str = ""):
             pass
     results = search_symbols(search_q)
     return {"query": search_q, "results": results}
+
+@router.api_route("/quote/live", methods=["GET", "POST"])
+async def get_live_quote(request: Request, symbol: str = "BTC-USD"):
+    """Fetch live real-time market quote, day change, day high/low, and market status."""
+    sym = symbol
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            sym = body.get("symbol", sym)
+        except Exception:
+            pass
+    quote = fetch_live_quote(sym)
+    return quote
 
 @router.api_route("/strategies/presets", methods=["GET", "POST"])
 async def get_strategy_presets():
