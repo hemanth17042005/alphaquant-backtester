@@ -804,6 +804,7 @@ export default function PricePredictorView({ initialSymbol = 'BTC-USD', currency
         symbol={symbol}
         currencyPreference={currencyMode}
         predictionData={predictionData}
+        horizonDays={horizonDays}
       />
 
     </div>

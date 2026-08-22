@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
   BookOpen, Sparkles, TrendingUp, TrendingDown, ShieldCheck,
   BrainCircuit, Activity, BarChart2, Layers, HelpCircle,
-  ChevronDown, ChevronUp, Zap, Target, Flame, Sliders, FileText, Info
+  ChevronDown, ChevronUp, Zap, Target, Flame, Sliders, FileText,
+  AlertTriangle, CheckCircle2, ShieldAlert, AlertCircle, Check
 } from 'lucide-react';
 import { getCurrencySymbol, formatPrice } from '../services/currency';
 
@@ -11,11 +12,11 @@ export default function PageSummaryExplainer({
   symbol = 'BTC-USD',
   currencyPreference = 'auto',
   predictionData = null,
+  horizonDays = '30',
   backtestResult = null,
   strategyConfig = null
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
 
   const currSym = getCurrencySymbol(symbol, currencyPreference);
 
@@ -23,6 +24,55 @@ export default function PageSummaryExplainer({
     const isBullish = predictionData?.direction?.includes('BULL');
     const isBearish = predictionData?.direction?.includes('BEAR');
     const dirColor = isBullish ? '#10B981' : isBearish ? '#EF4444' : '#FEE440';
+    
+    // Quantitative Buying Decision Engine
+    const changePct = predictionData?.predicted_change_pct ?? 0;
+    const conviction = predictionData?.ai_confidence_pct ?? 50;
+    const hitRate = predictionData?.evaluation_metrics?.directional_accuracy_pct ?? 60;
+
+    let buyVerdict = {
+      title: 'CONSIDER BUYING (FAVORABLE ACCUMULATION)',
+      subtext: `Positive algorithmic expectation for the next ${horizonDays} days with favorable risk-reward.`,
+      badgeColor: '#10B981',
+      badgeBg: 'rgba(16, 185, 129, 0.15)',
+      badgeBorder: 'rgba(16, 185, 129, 0.4)',
+      icon: CheckCircle2,
+      strategy: `AI models project a ${changePct > 0 ? '+' : ''}${changePct}% move. Optimal entry is on intraday dips near support (${formatPrice(predictionData?.support_level, symbol, currencyPreference, 2)}) with an upside target of ${formatPrice(predictionData?.target_price, symbol, currencyPreference, 2)}.`
+    };
+
+    if (changePct > 0 && (conviction < 65 || hitRate < 55)) {
+      buyVerdict = {
+        title: 'CONSIDER MODERATE BUY / PARTIAL ACCUMULATION',
+        subtext: `Modest upside trajectory projected for the ${horizonDays}-day horizon; scale in with partial position sizing.`,
+        badgeColor: '#00F5D4',
+        badgeBg: 'rgba(0, 245, 212, 0.15)',
+        badgeBorder: 'rgba(0, 245, 212, 0.4)',
+        icon: TrendingUp,
+        strategy: `Upside is projected at +${changePct}%, but model conviction is moderate (${conviction}%). Stagger entries in tranches and maintain strict stop losses below ${formatPrice(predictionData?.support_level, symbol, currencyPreference, 2)}.`
+      };
+    } else if (changePct <= 0 && changePct >= -2.5) {
+      buyVerdict = {
+        title: 'HOLD / WAIT FOR PULLBACK (NEUTRAL CONSOLIDATION)',
+        subtext: `Flat or range-bound price action projected for the next ${horizonDays} days.`,
+        badgeColor: '#FEE440',
+        badgeBg: 'rgba(254, 228, 64, 0.15)',
+        badgeBorder: 'rgba(254, 228, 64, 0.4)',
+        icon: AlertCircle,
+        strategy: `Neutral forecast (${changePct}%). Better risk-reward opportunities may present themselves after a confirmed breakout above ${formatPrice(predictionData?.resistance_level, symbol, currencyPreference, 2)} or test of major support.`
+      };
+    } else if (changePct < -2.5) {
+      buyVerdict = {
+        title: 'EXERCISE CAUTION / AVOID BUYING (BEARISH DRIFT)',
+        subtext: `Downward momentum or elevated tail risk projected for the ${horizonDays}-day horizon.`,
+        badgeColor: '#EF4444',
+        badgeBg: 'rgba(239, 68, 68, 0.15)',
+        badgeBorder: 'rgba(239, 68, 68, 0.4)',
+        icon: ShieldAlert,
+        strategy: `Ensemble models project a ${changePct}% decline. Avoid aggressive long positioning until the asset stabilizes and forms a base above support.`
+      };
+    }
+
+    const VerdictIcon = buyVerdict.icon;
 
     return (
       <div
@@ -54,12 +104,12 @@ export default function PageSummaryExplainer({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
-                  EXECUTIVE SUMMARY & PAGE GUIDE <span style={{ color: 'var(--accent-primary)' }}>({symbol} • {currSym})</span>
+                  EXECUTIVE SUMMARY & BUYING VERDICT <span style={{ color: 'var(--accent-primary)' }}>({symbol} • {currSym})</span>
                 </h3>
                 <span className="badge-neutral" style={{ fontSize: '0.68rem' }}>DEEP TECHNICAL EXPLAINER</span>
               </div>
               <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                Comprehensive breakdown of all quantitative models, confidence intervals, chart lines, and predictive metrics.
+                Comprehensive forecast synthesis, {horizonDays}-day buy/hold assessment, and complete metric breakdowns.
               </p>
             </div>
           </div>
@@ -78,7 +128,49 @@ export default function PageSummaryExplainer({
         {isExpanded && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
-            {/* 1. Dynamic AI Narrative Summary Card */}
+            {/* 1. Actionable Horizon Buy/Hold Consideration Verdict */}
+            {predictionData && (
+              <div style={{
+                background: buyVerdict.badgeBg,
+                border: `1px solid ${buyVerdict.badgeBorder}`,
+                borderRadius: '10px',
+                padding: '1.15rem 1.35rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem',
+                boxShadow: `0 0 20px ${buyVerdict.badgeBg}`
+              }}>
+                <VerdictIcon size={24} color={buyVerdict.badgeColor} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '4px',
+                        background: buyVerdict.badgeColor,
+                        color: '#080B11'
+                      }}>
+                        {horizonDays}-DAY ACTIONABLE SIGNAL
+                      </span>
+                      <h4 style={{ fontSize: '0.96rem', fontWeight: 800, color: buyVerdict.badgeColor }}>
+                        {buyVerdict.title}
+                      </h4>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
+                      AI Conviction: <strong style={{ color: '#F8FAFC' }}>{conviction}%</strong> • Target: <strong style={{ color: '#00F5D4' }}>{formatPrice(predictionData.target_price, symbol, currencyPreference, 2)}</strong>
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: '#E2E8F0', lineHeight: 1.5, marginBottom: '0.4rem' }}>
+                    {buyVerdict.subtext} {buyVerdict.strategy}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 2. Dynamic AI Synthesis Card */}
             {predictionData && (
               <div style={{
                 background: 'rgba(0, 245, 212, 0.05)',
@@ -91,18 +183,35 @@ export default function PageSummaryExplainer({
               }}>
                 <Sparkles size={20} color="var(--accent-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div style={{ fontSize: '0.84rem', lineHeight: 1.55, color: '#E2E8F0' }}>
-                  <strong style={{ color: '#00F5D4' }}>AI Synthesis for {symbol}: </strong>
+                  <strong style={{ color: '#00F5D4' }}>AI Technical Breakdown for {symbol}: </strong>
                   The ensemble machine learning pipeline projects a{' '}
                   <strong style={{ color: dirColor }}>{predictionData.direction}</strong> trajectory toward a target of{' '}
                   <strong style={{ color: '#00F5D4' }}>{formatPrice(predictionData.target_price, symbol, currencyPreference, 2)}</strong>{' '}
-                  ({predictionData.predicted_change_pct > 0 ? '+' : ''}{predictionData.predicted_change_pct}%) with an AI Conviction Score of{' '}
-                  <strong style={{ color: '#00BBF9' }}>{predictionData.ai_confidence_pct}%</strong>. Out-of-sample directional backtesting achieved{' '}
-                  <strong>{predictionData.evaluation_metrics?.directional_accuracy_pct}%</strong> historical hit rate. Projected key support is at{' '}
+                  ({changePct > 0 ? '+' : ''}{changePct}%) with an AI Conviction Score of{' '}
+                  <strong style={{ color: '#00BBF9' }}>{conviction}%</strong>. Out-of-sample directional backtesting achieved{' '}
+                  <strong>{hitRate}%</strong> historical hit rate. Projected key support floor is at{' '}
                   <strong>{formatPrice(predictionData.support_level, symbol, currencyPreference, 2)}</strong> and upper volatility resistance is at{' '}
                   <strong>{formatPrice(predictionData.resistance_level, symbol, currencyPreference, 2)}</strong>.
                 </div>
               </div>
             )}
+
+            {/* 3. Mandatory Risk & Legal Disclaimer (Not Guaranteed) */}
+            <div style={{
+              background: 'rgba(254, 228, 64, 0.05)',
+              border: '1px solid rgba(254, 228, 64, 0.25)',
+              borderRadius: '8px',
+              padding: '0.85rem 1.15rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.75rem'
+            }}>
+              <AlertTriangle size={18} color="#FEE440" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ fontSize: '0.76rem', color: '#CBD5E1', lineHeight: 1.5 }}>
+                <strong style={{ color: '#FEE440' }}>DISCLAIMER (PROJECTIONS ARE NOT GUARANTEED): </strong>
+                Machine learning forecast targets, statistical corridors (80% & 95%), and directional indicators are algorithmic estimations calculated strictly from historical mathematical data and probabilities. Financial markets involve inherent volatility and substantial risk of capital loss. <strong>Past performance and algorithmic projections do NOT guarantee future price returns.</strong> This content is generated for educational, quantitative research, and analytical purposes only and does NOT constitute financial, investment, or trading advice.
+              </div>
+            </div>
 
             {/* 2. Structured 3-Column Explainer Grid */}
             <div style={{
