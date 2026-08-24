@@ -8,6 +8,24 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 DATA_CACHE_DIR = BASE_DIR / "data_cache"
 
+# Load .env file if present
+def load_env_file():
+    env_file = BASE_DIR / ".env"
+    if env_file.exists():
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'").strip('"')
+                        os.environ[k] = v
+        except Exception:
+            pass
+
+load_env_file()
+
 # Ensure cache directory exists
 DATA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 

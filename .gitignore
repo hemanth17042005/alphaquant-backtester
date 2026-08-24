@@ -26,3 +26,7 @@ data_cache/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Secrets & Environment Variables
+.env
+.env.local
