@@ -14,7 +14,7 @@ def get_smtp_config():
     load_env_file()
     host = os.getenv("SMTP_HOST", "").strip()
     user = os.getenv("SMTP_USER", "").strip()
-    password = os.getenv("SMTP_PASSWORD", "").strip()
+    password = os.getenv("SMTP_PASSWORD", "").strip().replace(" ", "")
     from_addr = os.getenv("SMTP_FROM", "").strip()
 
     # Ignore sample placeholders
