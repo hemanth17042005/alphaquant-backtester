@@ -260,27 +260,25 @@ export default function App() {
     setShowWelcome(false);
   };
 
-  // If Welcome Landing Page active
-  if (showWelcome) {
-    return (
-      <WelcomePage
-        onEnterTerminal={() => {
-          setShowWelcome(false);
-          setActiveMode('backtester');
-          if (!backtestResult || !marketData) {
-            executeBacktest();
-          }
-        }}
-        onLaunchPreset={handleLaunchPreset}
-        onLaunchPredictor={handleLaunchPredictor}
-        currentUser={currentUser}
-        onOpenAuth={handleOpenAuth}
-      />
-    );
-  }
-
   return (
-    <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '1.25rem' }}>
+    <>
+      {/* Top-Level View: Welcome Screen vs Active Workstation */}
+      {showWelcome ? (
+        <WelcomePage
+          onEnterTerminal={() => {
+            setShowWelcome(false);
+            setActiveMode('backtester');
+            if (!backtestResult || !marketData) {
+              executeBacktest();
+            }
+          }}
+          onLaunchPreset={handleLaunchPreset}
+          onLaunchPredictor={handleLaunchPredictor}
+          currentUser={currentUser}
+          onOpenAuth={handleOpenAuth}
+        />
+      ) : (
+        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '1.25rem' }}>
       
       {/* Universal Header Bar with Mode Switcher & Currency Toggle */}
       <Header
@@ -518,8 +516,11 @@ export default function App() {
         </div>
       )}
 
-      {/* 1-Click Institutional Factsheet PDF Modal */}
-      <FactsheetModal
+      </div>
+    )}
+
+    {/* Institutional Modals & Dialogs (Available globally across both Welcome & Terminal) */}
+    <FactsheetModal
         isOpen={isFactsheetOpen}
         onClose={() => setIsFactsheetOpen(false)}
         symbol={symbol}
@@ -570,6 +571,6 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-    </div>
+    </>
   );
 }
