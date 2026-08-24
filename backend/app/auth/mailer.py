@@ -5,16 +5,29 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any, Optional
 
+from backend.app.config import load_env_file
+
 logger = logging.getLogger(__name__)
 
 def get_smtp_config():
-    """Dynamically read current SMTP environment variables."""
+    """Dynamically read current SMTP environment variables from .env."""
+    load_env_file()
+    host = os.getenv("SMTP_HOST", "").strip()
+    user = os.getenv("SMTP_USER", "").strip()
+    password = os.getenv("SMTP_PASSWORD", "").strip()
+    from_addr = os.getenv("SMTP_FROM", "").strip()
+
+    # Ignore sample placeholders
+    if user in ["your_email@gmail.com", "your_brevo_smtp_login"] or password in ["your_16_char_app_password", "your_16_character_app_password"]:
+        user = ""
+        password = ""
+
     return {
-        "host": os.getenv("SMTP_HOST", "").strip(),
+        "host": host,
         "port": int(os.getenv("SMTP_PORT", "587")),
-        "user": os.getenv("SMTP_USER", "").strip(),
-        "password": os.getenv("SMTP_PASSWORD", "").strip(),
-        "from_addr": os.getenv("SMTP_FROM", "").strip() or "AlphaQuant Security <no-reply@alphaquant.io>"
+        "user": user,
+        "password": password,
+        "from_addr": from_addr or (f"AlphaQuant Security <{user}>" if user else "AlphaQuant Security <no-reply@alphaquant.io>")
     }
 
 def send_verification_email(to_email: str, otp_code: str, user_name: str = "Trader") -> Dict[str, Any]:
