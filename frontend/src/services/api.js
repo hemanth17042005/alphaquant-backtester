@@ -265,4 +265,71 @@ export async function fetchStarterCodeTemplate() {
   return res.json();
 }
 
+// ----------------- USER AUTHENTICATION & EMAIL OTP CLIENT API -----------------
+
+export async function registerUser(userData) {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Registration failed' }));
+    throw new Error(err.detail || 'Registration failed');
+  }
+  return res.json();
+}
+
+export async function verifyEmailOtp(verifyData) {
+  const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(verifyData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Verification failed' }));
+    throw new Error(err.detail || 'Invalid or expired verification code');
+  }
+  return res.json();
+}
+
+export async function loginUser(credentials) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Login failed' }));
+    throw new Error(err.detail || 'Invalid email or password');
+  }
+  return res.json();
+}
+
+export async function resendOtp(email) {
+  const res = await fetch(`${API_BASE}/auth/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to resend code' }));
+    throw new Error(err.detail || 'Failed to resend verification code');
+  }
+  return res.json();
+}
+
+export async function fetchCurrentUser(token) {
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) return await res.json();
+    return null;
+  } catch (err) {
+    return null;
+  }
+}
+
+
 

@@ -2,11 +2,18 @@ import React, { useState } from 'react';
 import {
   TrendingUp, Play, ShieldCheck, Layers, Activity, Search,
   ArrowRight, Sparkles, CheckCircle2, BarChart2, PieChart,
-  Zap, Globe, Target, BrainCircuit, LineChart, Cpu, ArrowUpRight
+  Zap, Globe, Target, BrainCircuit, LineChart, Cpu, ArrowUpRight,
+  Lock, User, LogOut, Award
 } from 'lucide-react';
 import SymbolSearchSelector from './SymbolSearchSelector';
 
-export default function WelcomePage({ onEnterTerminal, onLaunchPreset, onLaunchPredictor }) {
+export default function WelcomePage({
+  onEnterTerminal,
+  onLaunchPreset,
+  onLaunchPredictor,
+  currentUser,
+  onOpenAuth
+}) {
   const [searchSym, setSearchSym] = useState('');
 
   const PRESET_CARDS = [
@@ -97,6 +104,68 @@ export default function WelcomePage({ onEnterTerminal, onLaunchPreset, onLaunchP
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {currentUser ? (
+            <div
+              id="welcome-user-profile-badge"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                background: 'rgba(15, 23, 42, 0.9)',
+                border: '1px solid rgba(0, 245, 212, 0.35)',
+                borderRadius: '24px',
+                padding: '0.35rem 0.85rem 0.35rem 0.45rem',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(0, 245, 212, 0.15)'
+              }}
+              onClick={() => onOpenAuth && onOpenAuth('profile')}
+              title="View Account Profile"
+            >
+              <div style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #00F5D4, #00BBF9)',
+                color: '#080B11',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.8rem',
+                fontWeight: 900,
+                fontFamily: 'var(--font-display)'
+              }}>
+                {(currentUser.full_name || currentUser.email || 'Q').slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FFF' }}>
+                  {currentUser.full_name || 'Quant Trader'}
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#00F5D4', fontWeight: 600 }}>
+                  {currentUser.tier || 'PRO_QUANT'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              id="btn-welcome-signin"
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              className="btn-secondary"
+              style={{
+                padding: '0.65rem 1.1rem',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                borderRadius: '10px',
+                borderColor: 'rgba(0, 245, 212, 0.4)',
+                color: '#00F5D4',
+                background: 'rgba(0, 245, 212, 0.08)'
+              }}
+            >
+              <Lock size={15} />
+              <span>Sign In / Register</span>
+            </button>
+          )}
+
           <button
             onClick={() => onLaunchPredictor ? onLaunchPredictor('BTC-USD') : onEnterTerminal()}
             className="btn-secondary"

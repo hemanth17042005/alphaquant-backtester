@@ -28,12 +28,210 @@ from backend.app.engine.sentiment_analyzer import fetch_market_sentiment
 from backend.app.engine.alert_dispatcher import test_alert_dispatch
 from backend.app.engine.portfolio_optimizer import run_multi_asset_portfolio
 from backend.app.engine.code_runner import execute_custom_strategy, DEFAULT_STARTER_CODE
+from backend.app.auth.database import (
+    create_user, get_user_by_email, get_user_by_id, authenticate_user,
+    create_email_otp, verify_email_otp, mark_user_verified
+)
+from backend.app.auth.mailer import send_verification_email
+from backend.app.auth.security import create_access_token, verify_access_token
 
 router = APIRouter(prefix="/api")
 
+# =============================================================================
+# USER AUTHENTICATION & EMAIL VERIFICATION ROUTES
+# =============================================================================
+
+@router.api_route("/auth/register", methods=["POST"])
+async def register_user_route(request: Request):
+    """
+    Register a new user and dispatch a 6-digit email verification OTP.
+    """
+    try:
+        body = await request.json()
+        email = (body.get("email") or "").lower().strip()
+        full_name = (body.get("full_name") or "Trader").strip()
+        password = body.get("password") or ""
+        
+        if not email or "@" not in email:
+            raise HTTPException(status_code=400, detail="A valid email address is required.")
+        if len(password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+            
+        existing_user = get_user_by_email(email)
+        if existing_user:
+            if existing_user["is_verified"]:
+                raise HTTPException(status_code=400, detail="An account with this email already exists. Please sign in.")
+            else:
+                # User exists but unverified: send a fresh OTP
+                otp_code = create_email_otp(email, "REGISTRATION")
+                mail_res = send_verification_email(email, otp_code, existing_user["full_name"])
+                return {
+                    "success": True,
+                    "requires_verification": True,
+                    "email": email,
+                    "message": f"Verification code sent to {email}.",
+                    "demo_code": mail_res.get("demo_code")
+                }
+                
+        # Create user account (unverified until OTP entered)
+        new_user = create_user(email, full_name, password, is_verified=False)
+        otp_code = create_email_otp(email, "REGISTRATION")
+        mail_res = send_verification_email(email, otp_code, full_name)
+        
+        return {
+            "success": True,
+            "requires_verification": True,
+            "email": email,
+            "message": f"Verification code sent to {email}.",
+            "demo_code": mail_res.get("demo_code")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/auth/verify-otp", methods=["POST"])
+async def verify_otp_route(request: Request):
+    """
+    Verify the 6-digit email OTP and issue signed JWT session token.
+    """
+    try:
+        body = await request.json()
+        email = (body.get("email") or "").lower().strip()
+        otp_code = str(body.get("otp_code") or "").strip()
+        
+        if not email or not otp_code:
+            raise HTTPException(status_code=400, detail="Email and 6-digit verification code are required.")
+            
+        is_valid = verify_email_otp(email, otp_code)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code. Please try again.")
+            
+        user = get_user_by_email(email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User account not found.")
+            
+        # Generate session token
+        token = create_access_token(user)
+        return {
+            "success": True,
+            "token": token,
+            "user": user,
+            "message": "Email verified successfully! Welcome to AlphaQuant Pro."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/auth/login", methods=["POST"])
+async def login_user_route(request: Request):
+    """
+    Sign in with email and password. Dispatches OTP if account is not yet verified.
+    """
+    try:
+        body = await request.json()
+        email = (body.get("email") or "").lower().strip()
+        password = body.get("password") or ""
+        
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password are required.")
+            
+        user = authenticate_user(email, password)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password.")
+            
+        if not user["is_verified"]:
+            # Send verification code
+            otp_code = create_email_otp(email, "LOGIN_VERIFICATION")
+            mail_res = send_verification_email(email, otp_code, user["full_name"])
+            return {
+                "success": True,
+                "requires_verification": True,
+                "email": email,
+                "message": "Please verify your email to complete login.",
+                "demo_code": mail_res.get("demo_code")
+            }
+            
+        token = create_access_token(user)
+        return {
+            "success": True,
+            "token": token,
+            "user": user,
+            "message": "Logged in successfully."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/auth/resend-otp", methods=["POST"])
+async def resend_otp_route(request: Request):
+    """
+    Resend a fresh 6-digit OTP verification code.
+    """
+    try:
+        body = await request.json()
+        email = (body.get("email") or "").lower().strip()
+        if not email:
+            raise HTTPException(status_code=400, detail="Email is required.")
+            
+        user = get_user_by_email(email)
+        user_name = user["full_name"] if user else "Trader"
+        
+        otp_code = create_email_otp(email, "RESEND")
+        mail_res = send_verification_email(email, otp_code, user_name)
+        
+        return {
+            "success": True,
+            "message": f"Fresh verification code sent to {email}.",
+            "demo_code": mail_res.get("demo_code")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.api_route("/auth/me", methods=["GET", "POST"])
+async def get_current_user_route(request: Request):
+    """
+    Validate session token and return user profile.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "").strip()
+        
+    if not token and request.method == "POST":
+        try:
+            body = await request.json()
+            token = body.get("token", "")
+        except Exception:
+            pass
+            
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token missing.")
+        
+    payload = verify_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Session expired or invalid.")
+        
+    user = get_user_by_id(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+        
+    return {
+        "authenticated": True,
+        "user": user
+    }
+
+# =============================================================================
+# STANDARD MARKET & SIMULATION ROUTES
+# =============================================================================
+
 @router.api_route("/health", methods=["GET", "POST"])
 async def health_check():
-    return {"status": "ok", "version": "2.5.0", "engine": "AlphaQuant Execution Core"}
+    return {"status": "ok", "version": "2.6.0", "engine": "AlphaQuant Execution Core"}
 
 @router.api_route("/symbols", methods=["GET", "POST"])
 async def get_popular_symbols():

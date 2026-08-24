@@ -121,6 +121,27 @@ def test_endpoints():
     assert "<title>AlphaQuant" in r.text
     print("[PASS] Frontend Single-Page App Index HTML serving OK")
 
+    # 9. Authentication & OTP Verification Endpoints
+    test_auth_email = "verify_flow_test@alphaquant.io"
+    r_reg = requests.post(f"{BASE_URL}/api/auth/register", json={
+        "email": test_auth_email,
+        "full_name": "Verified Quant",
+        "password": "InstitutionalPass2026!"
+    })
+    assert r_reg.status_code in [200, 400]
+    reg_json = r_reg.json()
+    if r_reg.status_code == 200 and "demo_code" in reg_json:
+        otp = reg_json["demo_code"]
+        r_ver = requests.post(f"{BASE_URL}/api/auth/verify-otp", json={
+            "email": test_auth_email,
+            "otp_code": otp
+        })
+        assert r_ver.status_code == 200
+        auth_token = r_ver.json()["token"]
+        r_me = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"})
+        assert r_me.status_code == 200
+        print(f"[PASS] Auth API & OTP Verification OK (Verified User: {r_me.json()['user']['email']})")
+
     print("\nALL PLATFORM ENDPOINTS & STATIC ASSETS VERIFIED SUCCESSFULLY!")
 
 if __name__ == "__main__":

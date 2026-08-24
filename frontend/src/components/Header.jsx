@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Play, TrendingUp, ShieldCheck, Activity, Database, RefreshCw, Search, Home,
   BrainCircuit, Coins, IndianRupee, DollarSign, Gamepad2, FileText,
-  Briefcase, Bell, Code
+  Briefcase, Bell, Code, User, Lock, LogOut, KeyRound
 } from 'lucide-react';
 import SymbolSearchSelector from './SymbolSearchSelector';
 import LivePriceTickerCard from './LivePriceTickerCard';
@@ -27,7 +27,10 @@ export default function Header({
   activeMode = 'backtester',
   setActiveMode,
   currencyPreference = 'auto',
-  setCurrencyPreference
+  setCurrencyPreference,
+  currentUser,
+  onOpenAuth,
+  onLogout
 }) {
   const activeCurrencySymbol = getCurrencySymbol(symbol, currencyPreference);
 
@@ -359,6 +362,83 @@ export default function Header({
                 )}
               </button>
             </>
+          )}
+
+          {/* User Authentication & Profile Badge */}
+          {currentUser ? (
+            <div
+              id="header-user-profile-badge"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                background: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(0, 245, 212, 0.35)',
+                borderRadius: '24px',
+                padding: '0.25rem 0.65rem 0.25rem 0.35rem',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(0, 245, 212, 0.15)',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => onOpenAuth && onOpenAuth('profile')}
+              title="Open User Profile & Settings"
+            >
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #00F5D4, #00BBF9)',
+                color: '#080B11',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.78rem',
+                fontWeight: 900,
+                fontFamily: 'var(--font-display)',
+                position: 'relative'
+              }}>
+                {(currentUser.full_name || currentUser.email || 'Q').slice(0, 2).toUpperCase()}
+                <span style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10B981',
+                  border: '1px solid #080B11'
+                }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.1 }}>
+                  {currentUser.full_name ? currentUser.full_name.split(' ')[0] : 'Trader'}
+                </span>
+                <span style={{ fontSize: '0.65rem', color: '#00F5D4', fontWeight: 600, letterSpacing: '0.03em' }}>
+                  {currentUser.tier || 'PRO'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              id="btn-header-signin"
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              className="btn-secondary"
+              style={{
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                borderColor: 'rgba(0, 245, 212, 0.4)',
+                color: '#00F5D4',
+                background: 'rgba(0, 245, 212, 0.08)'
+              }}
+              title="Sign In / Register with Email & OTP"
+            >
+              <Lock size={14} />
+              <span>Sign In</span>
+            </button>
           )}
 
         </div>

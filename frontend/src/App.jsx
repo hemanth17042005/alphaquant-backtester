@@ -23,8 +23,9 @@ import PaperTradingModal from './components/PaperTradingModal';
 import MultiAssetPortfolioModal from './components/MultiAssetPortfolioModal';
 import AlertsConfigModal from './components/AlertsConfigModal';
 import CustomCodeEditorModal from './components/CustomCodeEditorModal';
+import AuthModal from './components/AuthModal';
 
-import { fetchSymbols, fetchPresets, fetchMarketHistory, runBacktest } from './services/api';
+import { fetchSymbols, fetchPresets, fetchMarketHistory, runBacktest, fetchCurrentUser } from './services/api';
 import { getCurrencySymbol } from './services/currency';
 
 export default function App() {
@@ -37,6 +38,18 @@ export default function App() {
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false);
+  
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authToken, setAuthToken] = useState(() => {
+    try {
+      return localStorage.getItem('alphaquant_token') || null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState('login'); // 'login' | 'signup' | 'otp' | 'profile'
 
   // Active Application Mode: 'predictor' (AI Price Forecaster) vs 'backtester' (Algorithmic Backtester)
   const [activeMode, setActiveMode] = useState('predictor');
@@ -146,6 +159,51 @@ export default function App() {
     }
   };
 
+  // Restore user authentication session on page load
+  useEffect(() => {
+    async function restoreSession() {
+      const storedToken = localStorage.getItem('alphaquant_token');
+      if (storedToken) {
+        try {
+          const res = await fetchCurrentUser(storedToken);
+          if (res && res.user) {
+            setCurrentUser(res.user);
+            setAuthToken(storedToken);
+          } else {
+            localStorage.removeItem('alphaquant_token');
+            localStorage.removeItem('alphaquant_user');
+            setCurrentUser(null);
+            setAuthToken(null);
+          }
+        } catch (err) {
+          console.error('Session validation error:', err);
+        }
+      }
+    }
+    restoreSession();
+  }, []);
+
+  const handleAuthSuccess = (user, token, rememberMe = true) => {
+    setCurrentUser(user);
+    setAuthToken(token);
+    if (rememberMe && token) {
+      localStorage.setItem('alphaquant_token', token);
+      localStorage.setItem('alphaquant_user', JSON.stringify(user));
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setAuthToken(null);
+    localStorage.removeItem('alphaquant_token');
+    localStorage.removeItem('alphaquant_user');
+  };
+
+  const handleOpenAuth = (initialMode = 'login') => {
+    setAuthInitialMode(initialMode);
+    setIsAuthOpen(true);
+  };
+
   // Load initial symbols & presets
   useEffect(() => {
     async function init() {
@@ -215,6 +273,8 @@ export default function App() {
         }}
         onLaunchPreset={handleLaunchPreset}
         onLaunchPredictor={handleLaunchPredictor}
+        currentUser={currentUser}
+        onOpenAuth={handleOpenAuth}
       />
     );
   }
@@ -243,6 +303,9 @@ export default function App() {
         setActiveMode={setActiveMode}
         currencyPreference={currencyPreference}
         setCurrencyPreference={setCurrencyPreference}
+        currentUser={currentUser}
+        onOpenAuth={handleOpenAuth}
+        onLogout={handleLogout}
       />
 
       {/* Mode 1: AI Price Predictor Workspace */}
@@ -495,6 +558,16 @@ export default function App() {
         onClose={() => setIsCodeEditorOpen(false)}
         initialSymbol={symbol}
         currencyPreference={currencyPreference}
+      />
+
+      {/* User Authentication & OTP Verification Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        initialMode={authInitialMode}
+        currentUser={currentUser}
+        onAuthSuccess={handleAuthSuccess}
+        onLogout={handleLogout}
       />
 
     </div>
