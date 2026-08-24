@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Lock, Mail, User, KeyRound, ShieldCheck, Eye, EyeOff,
   RefreshCw, CheckCircle2, AlertCircle, ArrowRight, LogOut,
-  Sparkles, Clock, X, ChevronRight, Fingerprint, Award, Check
+  Sparkles, Clock, X, ChevronRight, Fingerprint, Award, Check,
+  Trash2, AlertTriangle
 } from 'lucide-react';
-import { registerUser, verifyEmailOtp, loginUser, resendOtp } from '../services/api';
+import { registerUser, verifyEmailOtp, loginUser, resendOtp, deleteUserAccount } from '../services/api';
 
 export default function AuthModal({
   isOpen,
@@ -34,10 +35,12 @@ export default function AuthModal({
   const [successMsg, setSuccessMsg] = useState('');
   const [demoCode, setDemoCode] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Sync mode with props when modal opens
   useEffect(() => {
     if (isOpen) {
+      setShowDeleteConfirm(false);
       if (currentUser && initialMode !== 'otp') {
         setMode('profile');
       } else {
@@ -265,6 +268,26 @@ export default function AuthModal({
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const token = localStorage.getItem('alphaquant_token');
+      if (token) {
+        await deleteUserAccount(token);
+      }
+      setSuccessMsg('Account permanently deleted.');
+      setTimeout(() => {
+        if (onLogout) onLogout();
+        setShowDeleteConfirm(false);
+        onClose();
+      }, 700);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to delete account.');
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -458,6 +481,87 @@ export default function AuthModal({
                 <span>Sign Out</span>
               </button>
             </div>
+
+            {/* Delete Account Section */}
+            {!showDeleteConfirm ? (
+              <div style={{ marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  id="btn-delete-account-trigger"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#EF4444',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    cursor: 'pointer',
+                    opacity: 0.75,
+                    transition: 'opacity 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.75'}
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Account & Data</span>
+                </button>
+              </div>
+            ) : (
+              <div style={{
+                marginTop: '1.25rem',
+                padding: '1rem',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: '10px',
+                animation: 'fadeIn 0.2s ease'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#EF4444', fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                  <AlertTriangle size={16} />
+                  <span>Permanently Delete Account?</span>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.85rem', lineHeight: 1.4 }}>
+                  This will permanently remove your login credentials, saved strategies, and paper portfolios. This action cannot be undone.
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={loading}
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={{ flex: 1, padding: '0.45rem', fontSize: '0.78rem', justifyContent: 'center' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-confirm-delete-account"
+                    disabled={loading}
+                    onClick={handleDeleteAccount}
+                    style={{
+                      flex: 1.2,
+                      padding: '0.45rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      background: '#EF4444',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: '#FFF',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    {loading ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                    <span>{loading ? 'Deleting...' : 'Yes, Delete'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

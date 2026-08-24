@@ -239,7 +239,6 @@ def verify_email_otp(email: str, otp_code: str) -> bool:
     """, (email, otp_code, now_str))
     
     row = cursor.fetchone()
-    
     if row:
         # Mark as used
         cursor.execute("UPDATE email_otps SET is_used = 1 WHERE id = ?", (row["id"],))
@@ -250,6 +249,48 @@ def verify_email_otp(email: str, otp_code: str) -> bool:
         
     conn.close()
     return False
+
+def delete_user_by_id(user_id: str) -> bool:
+    """Permanently delete user account, profiles, and associated OTPs by ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get user email first
+    cursor.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    email = row["email"] if row else None
+    
+    # Cascade delete
+    cursor.execute("DELETE FROM user_profiles WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    user_deleted = cursor.rowcount > 0
+    if email:
+        cursor.execute("DELETE FROM email_otps WHERE email = ?", (email,))
+        
+    conn.commit()
+    conn.close()
+    return user_deleted
+
+def delete_user_by_email(email: str) -> bool:
+    """Permanently delete user account, profiles, and associated OTPs by email."""
+    email = email.lower().strip()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return False
+        
+    user_id = row["id"]
+    cursor.execute("DELETE FROM user_profiles WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    cursor.execute("DELETE FROM email_otps WHERE email = ?", (email,))
+    
+    conn.commit()
+    conn.close()
+    return True
 
 # Initialize the database upon module load
 init_auth_db()

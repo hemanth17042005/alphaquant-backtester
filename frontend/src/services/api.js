@@ -331,5 +331,21 @@ export async function fetchCurrentUser(token) {
   }
 }
 
+export async function deleteUserAccount(token) {
+  const res = await fetch(`${API_BASE}/auth/delete-account`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ token })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to delete account' }));
+    throw new Error(err.detail || 'Failed to delete account');
+  }
+  return res.json();
+}
+
 
 

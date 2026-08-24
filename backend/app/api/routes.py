@@ -30,7 +30,7 @@ from backend.app.engine.portfolio_optimizer import run_multi_asset_portfolio
 from backend.app.engine.code_runner import execute_custom_strategy, DEFAULT_STARTER_CODE
 from backend.app.auth.database import (
     create_user, get_user_by_email, get_user_by_id, authenticate_user,
-    create_email_otp, verify_email_otp, mark_user_verified
+    create_email_otp, verify_email_otp, mark_user_verified, delete_user_by_id
 )
 from backend.app.auth.mailer import send_verification_email
 from backend.app.auth.security import create_access_token, verify_access_token
@@ -223,6 +223,40 @@ async def get_current_user_route(request: Request):
     return {
         "authenticated": True,
         "user": user
+    }
+
+@router.api_route("/auth/delete-account", methods=["POST", "DELETE"])
+async def delete_current_user_route(request: Request):
+    """
+    Permanently delete the authenticated user's account and profiles.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "").strip()
+        
+    if not token and request.method == "POST":
+        try:
+            body = await request.json()
+            token = body.get("token", "")
+        except Exception:
+            pass
+            
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token required.")
+        
+    payload = verify_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Session expired or invalid.")
+        
+    user_id = payload["user_id"]
+    deleted = delete_user_by_id(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User account not found or already deleted.")
+        
+    return {
+        "success": True,
+        "message": "Your account and all associated quantitative data have been permanently deleted."
     }
 
 # =============================================================================

@@ -76,10 +76,10 @@ def test_email_otp_generation_and_verification():
     assert len(otp_code) == 6
     assert otp_code.isdigit()
     
-    # Mailer dispatch simulation
+    # Mailer dispatch
     mail_res = send_verification_email(test_email, otp_code, "OTP Tester")
     assert mail_res["success"] is True
-    assert "demo_code" in mail_res
+    assert mail_res.get("delivery") in ["SMTP_SENT", "SIMULATED_INSTANT"]
     
     # Verify with invalid OTP
     assert verify_email_otp(test_email, "000000") is False
@@ -89,3 +89,16 @@ def test_email_otp_generation_and_verification():
     
     # Ensure one-time use (cannot be reused)
     assert verify_email_otp(test_email, otp_code) is False
+
+def test_delete_user_account():
+    from backend.app.auth.database import delete_user_by_id, delete_user_by_email
+    del_email = "delete.me@alphaquant.io"
+    user = create_user(del_email, "To Delete", "DeletePass123!")
+    assert user is not None
+    assert get_user_by_email(del_email) is not None
+    
+    # Delete by ID
+    deleted = delete_user_by_id(user["id"])
+    assert deleted is True
+    assert get_user_by_email(del_email) is None
+    assert get_user_by_id(user["id"]) is None
